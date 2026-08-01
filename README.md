@@ -1,2 +1,3 @@
 # The_Evaluator
-MVP for the Master Capstone
+
+Capstone project for the AI Engineering Master
