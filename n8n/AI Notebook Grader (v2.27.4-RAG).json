@@ -1,0 +1,264 @@
+{
+  "name": "AI Notebook Grader (v2.27.4-RAG)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "grader",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        864,
+        -496
+      ],
+      "id": "new-webhook-4835814070269377442",
+      "name": "Webhook Trigger",
+      "webhookId": "new-webhook-id-4835814070269377442"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize webhook input - handle different payload formats\nlet input = $json;\n\n// If data is nested in 'body' (raw body mode), extract it\nif (input.body && typeof input.body === 'string') {\n  try {\n    input = JSON.parse(input.body);\n  } catch(e) {}\n} else if (input.body && typeof input.body === 'object') {\n  input = input.body;\n}\n\n// Extract fields\nlet githubUrl = input.github_url || '';\nlet filename = input.filename || '';\nlet student_name = input.student_name || 'Estudiante';\n\n// Convert github_url to raw_url\nlet rawUrl = '';\nif (githubUrl) {\n  rawUrl = githubUrl.replace(/github\\.com\\/([\\w-]+\\/[\\w-]+)(\\/.+|$)/, 'raw.githubusercontent.com/$1/main$2') + '/' + filename;\n}\n\nreturn [{ json: { student_name, filename, github_url: githubUrl, raw_url: rawUrl } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        -496
+      ],
+      "id": "normalize-input-001",
+      "name": "Normaliza entrada webhook"
+    },
+    {
+      "parameters": {
+        "url": "={{ ($json.github_url || $json.body.github_url || \"\").replace(/github\\.com\\/([\\w-]+\\/[\\w-]+)(\\/.+|$)/, \"raw.githubusercontent.com/$1/main$2\") + \"/\" + ($json.filename || $json.body.filename || \"\") }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1088,
+        -496
+      ],
+      "id": "4eb21fde-8107-422c-bcbb-16d9324ae56b",
+      "name": "Descarga notebook a corregir"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Preparar los datos\nconst raw = $json;\nconst cells = raw.cells || [];\nconst student_name = $('Normaliza entrada webhook').item.json.student_name || \"Estudiante\";\nconst filename = $('Normaliza entrada webhook').item.json.filename || \"notebook.ipynb\";\n\n// 2. Sanitización\nlet cleanText = [];\nfor (let i = 0; i < cells.length; i++) {\n    const cell = cells[i];\n    const cellType = cell.cell_type || \"unknown\";\n    let code = \"\";\n    if (Array.isArray(cell.source)) { code = cell.source.join(\"\"); } else { code = String(cell.source); }\n    cleanText.push(`--- Celda ${i+1} (${cellType}) ---`);\n    cleanText.push(code.trim());\n    if (cellType === \"code\") {\n        const outputs = cell.outputs || [];\n        if (outputs.length > 0) {\n            cleanText.push(\"## OUTPUTS:\");\n            for (let out of outputs) {\n                if (out.data && (out.data[\"image/png\"] || out.data[\"image/jpeg\"])) { continue; }\n                let text = \"\";\n                if (out.output_type === \"stream\") { text = out.text || \"\"; }\n                else if (out.data && out.data[\"text/plain\"]) { text = out.data[\"text/plain\"].join(\"\"); }\n                if (text) {\n                    if (text.length > 800) { text = text.substring(0, 800) + \"\\n... [Output truncado] ...\"; }\n                    cleanText.push(text);\n                }\n            }\n        }\n    }\n}\n\n// 3. Unir y truncar\nlet cleanedNotebook = cleanText.join(\"\\n\");\nif (cleanedNotebook.length > 15000) {\n    cleanedNotebook = cleanedNotebook.substring(0, 15000) + \"\\n\\n[Nota: Notebook muy largo, se ha truncado el final]\";\n}\n\n// 4. Identificar tarea desde el contenido del notebook\nlet taskKey = \"default\";\nconst lowerText = cleanedNotebook.toLowerCase();\nif (lowerText.includes(\"numpy\")) {\n    if (lowerText.includes(\"structured array\") || lowerText.includes(\"broadcasting\") || lowerText.includes(\"eigenvalue\") || lowerText.includes(\"polynomial\")) {\n        taskKey = \"numpy_ii\";\n    } else {\n        taskKey = \"numpy_i\";\n    }\n} else if (lowerText.includes(\"pandas\")) { taskKey = \"pandas_i\"; }\nelse if (lowerText.includes(\"matplotlib\")) { taskKey = \"matplotlib_i\"; }\nelse if (lowerText.includes(\"scikit\")) { taskKey = \"scikit_i\"; }\n\n// 5. Retornar\nreturn [{json: {cleaned_notebook: cleanedNotebook, student_name: student_name, filename: filename, task_key: taskKey}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        -496
+      ],
+      "id": "ffa4c057-fd1b-42b2-bebd-6b6907905fb1",
+      "name": "Formatea y limpia notebook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Rubric lookup - retrieve the appropriate rubric based on task_key\nconst taskKey = $json.task_key || \"default\";\n\n// Embedded rubrics (from internal documentation)\nconst rubrics = {\n    numpy_i: \"---\\ntask: numpy_basics\\nassignment: \\\"NumPy I - Fundamentos de NumPy\\\"\\ncourse: \\\"Data Science Bootcamp\\\"\\nmodule: \\\"NumPy Basics\\\"\\nnum_exercises: 20\\nweight: 1.0\\n---\\n\\n# R\\u00fabrica de Evaluaci\\u00f3n: NumPy I - Fundamentos\\n\\n## Criterios de Evaluaci\\u00f3n\\n\\n### Factores Principales (70% del peso)\\n\\n#### 1. Completitud (25%)\\n**\\u00bfTodos los ejercicios tienen al menos una celda de c\\u00f3digo como respuesta?**\\n\\n| Nivel | Criterio |\\n|-------|----------|\\n| Excelente (9-10) | Todos los 20 ejercicios completados con c\\u00f3digo ejecutable |\\n| Bien (7-8) | 16-19 ejercicios completados (1-4 sin resolver) |\\n| Regular (5-6) | 10-15 ejercicios completados (5-9 sin resolver) |\\n| Insuficiente (3-4) | Menos de 10 ejercicios completados |\\n\\n**Penalizaci\\u00f3n:** Cada ejercicio sin resolver resta 0.5 puntos de la nota base.\\n\\n#### 2. Comprensi\\u00f3n de la Tarea (25%)\\n**\\u00bfEl estudiante usa el enfoque correcto y las funciones de NumPy apropiadas?**\\n\\n| Nivel | Indicadores |\\n|-------|-------------|\\n| Excelente | Usa siempre la funci\\u00f3n de NumPy correcta; entiende la l\\u00f3gica detr\\u00e1s de cada operaci\\u00f3n |\\n| Bien | Usa funciones correctas en la mayor\\u00eda; ocasionalmente usa workarounds funcionales |\\n| Regular | Mezcla funciones correctas con enfoques no \\u00f3ptimos; confunde algunos conceptos |\\n| Insuficiente | Usa listas Python en vez de arrays NumPy; no comprende operaciones vectoriales |\\n\\n**Se\\u00f1ales de alerta:**\\n- Crear listas manualmente en vez de `np.array()`\\n- Usar loops `for` donde se podr\\u00eda vectorizar\\n- Confundir `reshape`, `resize`, `resize_`\\n- No asignar resultados a variables cuando se requiere\\n\\n#### 3. Correctitud de las Respuestas (20%)\\n**\\u00bfEl c\\u00f3digo produce el output esperado sin errores?**\\n\\n| Nivel | Criterio |\\n|-------|----------|\\n| Excelente | Todas las respuestas correctas; c\\u00f3digo libre de errores |\\n| Bien | 80-95% correctas; errores menores (signo, \\u00edndice) |\\n| Regular | 60-79% correctas; errores de sintaxis o l\\u00f3gica |\\n| Insuficiente | Menos del 60% correctas; errores cr\\u00edticos |\\n\\n**Errores comunes que penalizar:**\\n- Sintaxis incorrecta: `np.array[[...]]` vs `np.array([...])`\\n- Valores incorrectos: `True` donde deber\\u00eda ser `False`\\n- Dimensiones incorrectas en `reshape`\\n- No copiar arrays antes de modificarlos\\n\\n### Factores Secundarios (30% del peso)\\n\\n#### 4. Legibilidad del C\\u00f3digo (15%)\\n| Nivel | Indicadores |\\n|-------|-------------|\\n| Excelente | Nombres de variables descriptivos; estructura clara; c\\u00f3digo limpio |\\n| Bien | Nombres razonables; algunos problemas menores |\\n| Regular | Nombres ambiguos (`ml`, `arrrrrray`, `a`); estructura confusa |\\n| Insuficiente | Nombres sin sentido; c\\u00f3digo ilegible |\\n\\n#### 5. Comentarios y Documentaci\\u00f3n (15%)\\n| Nivel | Indicadores |\\n|-------|-------------|\\n| Excelente | Comentarios explicativos en cada ejercicio; docstrings en funciones |\\n| Bien | Comentarios en la mayor\\u00eda de ejercicios |\\n| Regular | Pocos comentarios; solo donde es estrictamente necesario |\\n| Insuficiente | Sin comentarios en absoluto |\\n\\n## Detalle por Ejercicio\\n\\n### Ejercicios 1-6: Fundamentos de Arrays\\n- `np.arange()`, `np.full()`, boolean indexing, `np.where()`\\n- **Clave:** Entender indexaci\\u00f3n booleana y `where`\\n- **Error com\\u00fan:** Modificar array original sin hacer copia\\n\\n### Ejercicios 7-10: Manipulaci\\u00f3n de Arrays\\n- `reshape`, `vstack`, `concatenate`, `intersect1d`\\n- **Clave:** Diferenciar concatenaci\\u00f3n vertical vs horizontal\\n- **Error com\\u00fan:** Confundir `axis` en concatenate\\n\\n### Ejercicios 11-13: Documentaci\\u00f3n y Creaci\\u00f3n Manual\\n- `help()`, `np.array()`, indexaci\\u00f3n\\n- **Clave:** Saber consultar documentaci\\u00f3n\\n- **Error com\\u00fan:** No asignar resultado de operaciones\\n\\n### Ejercicios 14-17: Secuencias y Aleatoriedad\\n- `np.arange` con paso, arrays random, `reshape`\\n- **Clave:** Multidimensionalidad y propiedades de arrays\\n- **Error com\\u00fan:** Dimensiones incorrectas\\n\\n### Ejercicios 18-20: Avanzados\\n- Matrices 3D, valores booleanos, propiedades de arrays\\n- **Clave:** Entender estructura multidimensional\\n- **Error com\\u00fan:** Confundir shape, size, ndim\\n\\n## Escala de Calificaci\\u00f3n\\n\\n| Nota | Calificaci\\u00f3n | Criterio |\\n|------|-------------|----------|\\n| 9-10 | Excepcional | Todo perfecto + c\\u00f3digo impecable |\\n| 7-8 | Bien | Completado + mayoritariamente correcto |\\n| 5-6 | Regular | Completado con errores o incompleto pero razonable |\\n| 3-4 | Mal | Muy incompleto o incorrecto |\\n\\n## Instrucciones para el Evaluador\\n\\n1. Revisa si todos los ejercicios tienen celdas de c\\u00f3digo\\n2. Verifica que se usan funciones de NumPy (no Python nativo)\\n3. Comprueba que los outputs coinciden con lo esperado\\n4. Eval\\u00faa legibilidad y comentarios como factor diferencial\\n5. Entre dos trabajos completados, la calidad del c\\u00f3digo decide la nota\\n\",\n    numpy_ii: \"---\\ntask: numpy_intermediate\\nassignment: \\\"NumPy II - Manipulaci\\u00f3n Avanzada\\\"\\ncourse: \\\"Data Science Bootcamp\\\"\\nmodule: \\\"NumPy Intermediate\\\"\\nnum_exercises: 19\\nweight: 1.0\\n---\\n\\n# R\\u00fabrica de Evaluaci\\u00f3n: NumPy II - Manipulaci\\u00f3n Avanzada\\n\\n## Criterios de Evaluaci\\u00f3n\\n\\n### Factores Principales (70% del peso)\\n\\n#### 1. Completitud (25%)\\n**\\u00bfTodos los ejercicios tienen al menos una celda de c\\u00f3digo como respuesta?**\\n\\n| Nivel | Criterio |\\n|-------|----------|\\n| Excelente (9-10) | Todos los 19 ejercicios completados con c\\u00f3digo ejecutable |\\n| Bien (7-8) | 16-18 ejercicios completados (1-3 sin resolver) |\\n| Regular (5-6) | 10-15 ejercicios completados (4-8 sin resolver) |\\n| Insuficiente (3-4) | Menos de 10 ejercicios completados |\\n\\n**Penalizaci\\u00f3n:** Cada ejercicio sin resolver resta 0.5 puntos de la nota base.\\n\\n#### 2. Comprensi\\u00f3n de la Tarea (25%)\\n**\\u00bfEl estudiante demuestra dominio de slicing, indexing y manipulaci\\u00f3n avanzada?**\\n\\n| Nivel | Indicadores |\\n|-------|-------------|\\n| Excelente | Usa slicing avanzado correctamente; entiende inversi\\u00f3n de ejes; encapsula en funciones cuando se pide |\\n| Bien | slicing correcto en la mayor\\u00eda; confunde ocasionalmente \\u00edndices negativos vs positivos |\\n| Regular | Funcional pero usa m\\u00faltiples celdas para lograr lo que una har\\u00eda; workarounds |\\n| Insuficiente | Confunde reshape con slicing; no entiende matrices 2D |\\n\\n**Se\\u00f1ales de alerta:**\\n- Usar `.T` cuando deber\\u00eda ser `[::-1, ::-1]` (inversi\\u00f3n \\u2260 transposici\\u00f3n)\\n- M\\u00faltiples enfoques redundantes en la misma celda\\n- No encapsular c\\u00f3digo en funciones cuando se solicita expl\\u00edcitamente\\n- `np.random.rand()` vs arrays de enteros\\n\\n#### 3. Correctitud de las Respuestas (20%)\\n**\\u00bfEl c\\u00f3digo produce el output esperado sin errores?**\\n\\n| Nivel | Criterio |\\n|-------|----------|\\n| Excelente | Todos correctos; c\\u00f3digo limpio |\\n| Bien | 80-95% correctos; errores menores |\\n| Regular | 60-79% correctos; errores de l\\u00f3gica |\\n| Insuficiente | < 60% correctos |\\n\\n**Errores comunes que penalizar:**\\n- Slicing incorrecto: `[-2:-4:-1]` cuando basta `[-2:]`\\n- `reshape` dimensiones incompatibles\\n- No usar step en slicing `[::2]`\\n- Confundir `np.nonzero()` con indexaci\\u00f3n booleana\\n\\n### Factores Secundarios (30% del peso)\\n\\n#### 4. Legibilidad del C\\u00f3digo (15%)\\n| Nivel | Indicadores |\\n|-------|-------------|\\n| Excelente | Nombres descriptivos; slicing limpio; funciones bien definidas |\\n| Bien | Razonablemente legible |\\n| Regular | Nombres ambiguos; c\\u00f3digo redundante |\\n| Insuficiente | Ilegible |\\n\\n#### 5. Comentarios y Documentaci\\u00f3n (15%)\\n| Nivel | Indicadores |\\n|-------|-------------|\\n| Excelente | Comentarios explicativos; docstrings en funciones |\\n| Bien | Comentarios presentes |\\n| Regular | Pocas o ning\\u00fan comentario |\\n| Insuficiente | Sin comentarios |\\n\\n## Detalle por Ejercicio\\n\\n### Ejercicios 1-3: Slicing Avanzado\\n- Indexaci\\u00f3n negativa, paso, inversi\\u00f3n\\n- **Clave:** Dominio de `[start:stop:step]` y `::-1`\\n\\n### Ejercicios 4-7: Manipulaci\\u00f3n de Matrices 2D\\n- `reshape`, slicing 2D, inversi\\u00f3n, extracci\\u00f3n de sub-matrices\\n- **Clave:** Slicing en dos dimensiones `[rows, cols]`\\n- **Error com\\u00fan:** Confundir `.T` con inversi\\u00f3n completa\\n\\n### Ejercicios 8-9: Filtrado y Divisi\\u00f3n\\n- Indexaci\\u00f3n booleana, `np.where()`, `np.vsplit()`\\n- **Clave:** M\\u00faltiples m\\u00e9todos para filtrar; dividir arrays\\n\\n### Ejercicios 10-12: Funciones y Operaciones\\n- Memoria, `np.nonzero()`, encapsular en funciones\\n- **Clave:** Documentar funciones con docstrings\\n\\n### Ejercicios 13-16: Estad\\u00edstica y Patrones\\n- `np.mean()`, `np.std()`, normalizaci\\u00f3n, patrones de matrices\\n- **Clave:** Estad\\u00edstica b\\u00e1sica con NumPy; crear patrones con slicing\\n\\n### Ejercicios 17-19: Avanzados\\n- `np.tile()`, normalizaci\\u00f3n completa, interpolaci\\u00f3n\\n- **Clave:** Reutilizaci\\u00f3n de patrones; normalizaci\\u00f3n z-score\\n\\n## Escala de Calificaci\\u00f3n\\n\\n| Nota | Calificaci\\u00f3n | Criterio |\\n|------|-------------|----------|\\n| 9-10 | Excepcional | Todo perfecto + c\\u00f3digo impecable |\\n| 7-8 | Bien | Completado + mayoritariamente correcto |\\n| 5-6 | Regular | Completado con errores o incompleto pero razonable |\\n| 3-4 | Mal | Muy incompleto o incorrecto |\\n\\n## Diferencias Clave entre NumPy I y II\\n\\n| Aspecto | NumPy I | NumPy II |\\n|---------|---------|----------|\\n| Complejidad slicing | 1D b\\u00e1sico | 2D avanzado + pasos negativos |\\n| Funciones | `arange`, `full`, `where` | `nonzero`, `tile`, `vsplit` |\\n| \\u00c9nfasis | Creaci\\u00f3n y manipulaci\\u00f3n b\\u00e1sica | Transformaci\\u00f3n avanzada y estad\\u00edstica |\\n| Funciones requeridas | No | S\\u00ed (ejercicio 12) |\\n\"\n};\n\nconst rubricContent = rubrics[taskKey] || rubrics.numpy_i || \"Evalúa usando criterios generales: completitud, corrección y uso adecuado de la librería.\";\n\nreturn [{json: {...$json, rubric_content: rubricContent}}];"
+      },
+      "id": "82ced364-ba8a-462a-8ce5-c49d9a24740f",
+      "name": "Recupera rúbrica",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        -496
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cleanedNotebook = $json.cleaned_notebook;\nconst student_name = $json.student_name;\nconst filename = $json.filename;\nconst rubricContent = $json.rubric_content || \"Evalúa usando criterios generales: completitud, corrección y uso adecuado de la librería.\";\n\nconst prompt = `${rubricContent}\n\n### EVALUATION INSTRUCTIONS:\nFirst make sure to find out how many questions there are in the notebook and check every one has at least one code cell as an answer, so you can see if there are unresolved exercises. If there is no python code in the solution, the exercise is probably unresolved. Be sure to go one by one, reading carefully.\nIf the answer is present, evaluate it based on the rubric criteria above.\nSolving a problem in more than one way is a plus, as long as all the answers are correct.\nCheck if the code is correct by running it in your mind, step by step. If you find any mistake, note it down.\n\n### REPORT FORMAT:\nStructure the final report in spanish as follows:\n- Title of the report, with the name of the student and the file name of the document.\n- Global grade of the notebook according to this Grade Scale:\n    - 'Mal': Tasks are not understood, more than half of the exercises are unresolved, severe issues.\n    - 'Regular': Many issues with task understanding, code correctness or syntax.\n    - 'Bien': Good task understanding, code mostly functional with minor issues.\n    - 'Excepcional': No major issues; code is clean and fully functional.\n- Summary of global main factors performance.\n- Summary of global secondary factors performance.\n- List of exercises with issues (table format: Nº | Ejercicio | Problema | Recomendación).\n\nHere is the notebook to review:\n**Alumno:** ${student_name}\n**Archivo:** ${filename}\n**Contenido (Limpio):**\n${cleanedNotebook}`;\n\nreturn [{json: {prompt: prompt, student_name, filename}}];"
+      },
+      "id": "26c3e1fb-1ab2-4f2a-9f13-614501322d54",
+      "name": "Build Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        -496
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.0.37:8084/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "body": "={{ JSON.stringify({ \n  \"model\": \"unsloth/Qwen35\",\n  \"messages\": [\n    { \n      \"role\": \"system\", \n      \"content\": \"Eres un evaluador pedagógico experto en Data Science. Responde ÚNICAMENTE con el informe en Markdown solicitado. NO generes bloques de pensamiento, razonamiento interno, chain-of-thought ni explicaciones previas. Salta directamente al informe final.\" \n    },\n    { \n      \"role\": \"user\", \n      \"content\": $json.prompt \n    }\n  ],\n  \"temperature\": 0.2,\n  \"top_p\": 0.5,\n  \"top_k\": 10,\n  \"seed\": 42,\n  \"max_tokens\": 8000,\n  \"stream\": false\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2208,
+        -496
+      ],
+      "id": "b2820902-039b-4507-9503-436c900b8b99",
+      "name": "Evalúa notebook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Obtener la respuesta\nconst response = $json;\nconst msg = response.choices[0].message;\n\n// Priorizar 'content'. Si está vacío, usar 'reasoning_content' como fallback\nlet rawText = msg.content || msg.reasoning_content || \"\";\n\n// 2. Buscar la calificación (más flexible)\nlet gradeText = \"Regular\";\nconst match = rawText.match(/(?:Calificación Global|Nota)[,:]\\s*\\**\\**?(Mal|Regular|Bien|Excepcional)/i);\nif (match) gradeText = match[1];\n\n// 3. Mapear a nota numérica\nconst gradeMap = { \"Mal\": 3, \"Regular\": 5, \"Bien\": 7, \"Excepcional\": 9 };\nconst numericGrade = gradeMap[gradeText] || 5;\n\n// 4. Retornar estructura limpia para Moodle\nreturn {\n  json: {\n    student_name: $('Build Prompt').item.json.student_name,\n    filename: $('Build Prompt').item.json.filename,\n    categorical_grade: gradeText,\n    numeric_grade: numericGrade,\n    markdown_report: rawText,\n    raw_llm_response: response\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2432,
+        -496
+      ],
+      "id": "353c7665-0204-49c5-bcd8-2982487fb773",
+      "name": "Formatea salida evaluación"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ student_name: $json.student_name, filename: $json.filename, grade: $json.categorical_grade, numeric_grade: $json.numeric_grade, markdown_report: $json.markdown_report }) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "resp-001",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2656,
+        -496
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Normaliza entrada webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normaliza entrada webhook": {
+      "main": [
+        [
+          {
+            "node": "Descarga notebook a corregir",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descarga notebook a corregir": {
+      "main": [
+        [
+          {
+            "node": "Formatea y limpia notebook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatea y limpia notebook": {
+      "main": [
+        [
+          {
+            "node": "Recupera rúbrica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recupera rúbrica": {
+      "main": [
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prompt": {
+      "main": [
+        [
+          {
+            "node": "Evalúa notebook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evalúa notebook": {
+      "main": [
+        [
+          {
+            "node": "Formatea salida evaluación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatea salida evaluación": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Madrid",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "06f86aad-7549-4011-9cfe-373bf8eea879",
+  "meta": {
+    "instanceId": "f638af8e6522d987b9de0bb2ef2fe4a161c30e397b0fb7438c32813cc2ea1cbb"
+  },
+  "id": "4TUyjhtQ5ASB18I1",
+  "tags": []
+}
