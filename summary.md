@@ -10,8 +10,8 @@ Fix the n8n AI Notebook Grader workflow so `/webhook/grader` executes the full g
 
 | Component | Details |
 |-----------|---------|
-| n8n instance | `http://192.168.0.37:5678` — **upgraded from v2.8.4 → v1.90.3** (via `npm install -g n8n@next`) |
-| Node.js | Upgraded to **v22.22** (via nvm) to satisfy n8n v1.90.3 requirement |
+| n8n instance | `http://192.168.0.37:5678` — **v2.32.7** |
+| Node.js | **v22.22** (via nvm) |
 | LLM server (port 8083) | `Qwen3.6-MTP-27B-UD-Q4_K_XL.gguf` (not used by workflow) |
 | LLM server (port 8084) | `unsloth/Qwen35` — **active LLM for grading** |
 | Workflow ID | `4TUyjhtQ5ASB18I1` (AI Notebook Grader v2.27.4-RAG) |
@@ -67,13 +67,11 @@ Content-based (not filename-based): scans notebook text for keywords (`"structur
 
 ## Known Issues
 
-1. **n8n API key invalid** — All Python scripts (`test_*.py`, `check_*.py`, etc.) use the old JWT API key that doesn't work in n8n v1.90.3. Need to generate a new key in n8n Settings → API and update all scripts.
+1. **n8n API key** — MCP connection works. REST API key has `mcp-server-api` audience, may not work for REST endpoints.
 
 2. **Rubrics embedded as JS strings** — Rubric files in `rubrics/` are the source of truth, but n8n's sandbox blocks file I/O. Rubrics are embedded in the workflow's Code node. When a rubric file changes, you must also update the embedded copy in the n8n workflow JSON and re-import.
 
 3. **n8n JSON import resets node settings** — Importing a workflow JSON via the UI can reset Merge node mode, lose multi-branch connections, etc. The current linear flow avoids this problem.
-
-4. **MCP tools** — `n8n_get_workflow_details` works. `n8n_search_workflows` has a schema mismatch in v1.90.3. `n8n_execute_workflow` requires `executionMode` parameter not exposed in the schema.
 
 ## Files
 
