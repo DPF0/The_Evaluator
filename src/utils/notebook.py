@@ -63,6 +63,35 @@ def clean_notebook(notebook_json: dict, max_output_chars: int = 2000,
     return cleaned
 
 
+def clean_notebook_nbformat(notebook_json: dict, max_output_chars: int = 2000,
+                            max_total_chars: int = 30000) -> str:
+    """Clean a Jupyter notebook using nbformat for better processing.
+
+    Args:
+        notebook_json: Parsed notebook JSON dict.
+        max_output_chars: Max characters per output cell.
+        max_total_chars: Max total characters for cleaned notebook.
+
+    Returns:
+        Cleaned notebook text.
+    """
+    import nbformat
+    from nbconvert.preprocessors import ClearOutputPreprocessor
+
+    # Convert to nbformat NotebookNode
+    nb = nbformat.from_dict(notebook_json)
+
+    # Clear outputs
+    clear_processor = ClearOutputPreprocessor()
+    nb = clear_processor.preprocess(nb, {})
+
+    # Convert back to dict
+    notebook_json = nbformat.to_dict(nb)
+
+    # Use standard cleaning
+    return clean_notebook(notebook_json, max_output_chars, max_total_chars)
+
+
 def classify_task(notebook_text: str, filename: str = "") -> str:
     """Classify notebook task based on content and filename.
 

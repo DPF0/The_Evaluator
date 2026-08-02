@@ -62,6 +62,20 @@ Verifica si el código es correcto ejecutándolo mentalmente, paso a paso. Si en
 
 **EVALÚA DE FORMA ESTRICTA.** No otorgues 'Bien' si hay errores significativos. Prefiere 'Regular' cuando haya dudas.
 
+### EJEMPLOS DE REFERENCIA:
+
+**EjemploRegular (Regular):**
+- Todos los ejercicios tienen código, pero varios errores conceptuales
+- Código funcional pero con errores en resultados
+- Variables poco descriptivas, sin comentarios
+- Calificación: Regular
+
+**Ejemplo Bien (Bien):**
+- Todos los ejercicios resueltos correctamente
+- 1-2 ejercicios con problemas menores (eficiencia, estilo)
+- Código limpio, algunas variables descriptivas
+- Calificación: Bien
+
 ### FORMATO DEL INFORME:
 Estructura el informe final en español de España como sigue:
 - Título del informe con el nombre del alumno y el nombre del archivo.
