@@ -54,19 +54,22 @@ Si la respuesta está presente, evalúa la basándote en los criterios de la rú
 Resolver un problema de más de una manera es un plus, siempre que todas las respuestas sean correctas.
 Verifica si el código es correcto ejecutándolo mentalmente, paso a paso. Si encuentras algún error, anótalo.{code_analysis}
 
-**IMPORTANTE: Aplica la escala de calificación de la rúbrica de forma estricta.**
-- Si la mayoría de ejercicios están completados y el código es mayoritariamente correcto, la calificación debe ser 'Bien' o superior.
-- 'Regular' se reserva para trabajos con muchos errores conceptuales o incompletos de forma significativa.
-- 'Mal' solo si más de la mitad de los ejercicios están sin resolver o hay problemas graves.
+**CRITERIOS DE CALIFICACIÓN ESTRICTOS:**
+- **Excepcional (9-10)**: TODOS los ejercicios resueltos correctamente + código limpio, eficiente, con buenas prácticas. Sin errores ni advertencias.
+- **Bien (7-8)**: TODOS o casi todos los ejercicios resueltos, código mayoritariamente correcto, pero con algunos problemas menores (estilo, eficiencia, comentarios).
+- **Regular (5-6)**: Al menos la mitad de ejercicios resueltos correctamente, pero con errores significativos en varios ejercicios, código ineficiente o con problemas de estilo graves.
+- **Mal (3-4)**: Menos de la mitad de ejercicios resueltos, o muchos errores conceptuales graves, o código que no funciona en la mayoría de ejercicios.
+
+**EVALÚA DE FORMA ESTRICTA.** No otorgues 'Bien' si hay errores significativos. Prefiere 'Regular' cuando haya dudas.
 
 ### FORMATO DEL INFORME:
 Estructura el informe final en español de España como sigue:
 - Título del informe con el nombre del alumno y el nombre del archivo.
 - Calificación Global del notebook según esta Escala:
-    - 'Mal': Las tareas no se entienden, más de la mitad de los ejercicios sin resolver, problemas graves.
-    - 'Regular': Muchos problemas con la comprensión de tareas, corrección del código o sintaxis.
-    - 'Bien': Buena comprensión de tareas, código mayoritariamente funcional con problemas menores.
-    - 'Excepcional': Sin problemas mayores; código limpio y completamente funcional.
+    - 'Mal': Menos de la mitad de ejercicios resueltos o errores conceptuales graves.
+    - 'Regular': Mitad de ejercicios correctos pero con errores significativos o código ineficiente.
+    - 'Bien': Todos o casi todos correctos, con problemas menores.
+    - 'Excepcional': Todo perfecto, código impecable.
 - Resumen del rendimiento en factores principales.
 - Resumen del rendimiento en factores secundarios.
 - Lista de ejercicios con problemas (formato tabla: Nº | Ejercicio | Problema | Recomendación).
