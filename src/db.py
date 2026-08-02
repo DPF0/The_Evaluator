@@ -1,18 +1,43 @@
 import sqlite3
+import threading
 from pathlib import Path
 from typing import Optional
 from src.models import Student, Assignment, Evaluation, Rubric, Grade
 
 
 class Database:
-    """SQLite database for storing evaluations, students, and rubrics."""
+    """SQLite database for storing evaluations, students, and rubrics.
+    
+    Thread-safe: uses per-thread connections with checkpointing.
+    """
+
+    _local = threading.local()
 
     def __init__(self, db_path: str = "data/evaluations.db"):
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self.conn = sqlite3.connect(str(self.db_path))
-        self.conn.row_factory = sqlite3.Row
+        self._main_conn = sqlite3.connect(str(self.db_path))
+        self._main_conn.execute("PRAGMA journal_mode=WAL")
+        self._main_conn.row_factory = sqlite3.Row
         self._create_tables()
+        self._main_conn.commit()
+
+    def _get_conn(self):
+        """Get thread-local connection."""
+        if not hasattr(self._local, 'conn') or self._local.conn is None:
+            self._local.conn = sqlite3.connect(str(self.db_path))
+            self._local.conn.execute("PRAGMA journal_mode=WAL")
+            self._local.conn.row_factory = sqlite3.Row
+        return self._local.conn
+
+    @property
+    def conn(self):
+        """Thread-safe connection property."""
+        return self._get_conn()
+
+    @conn.setter
+    def conn(self, value):
+        self._main_conn = value
 
     def _create_tables(self):
         """Create database tables if they don't exist."""
@@ -224,5 +249,7 @@ class Database:
         return [dict(r) for r in rows]
 
     def close(self):
-        """Close database connection."""
-        self.conn.close()
+        """Close database connections."""
+        if hasattr(self._local, 'conn') and self._local.conn:
+            self._local.conn.close()
+        self._main_conn.close()

@@ -1,8 +1,10 @@
 """Evaluation Agent — evaluates notebooks against rubrics using LLM."""
+from typing import Optional
 from src.llm import LLMClient
 from src.models import Evaluation, ExerciseIssue, Grade
 from src.utils.notebook import clean_notebook, classify_task
 from src.utils.rubrics import load_rubric_from_file
+from src.utils.code_analysis import analyze_code, format_metrics_for_llm
 
 
 class EvaluationAgent:
@@ -13,7 +15,8 @@ class EvaluationAgent:
         self.rubrics_dir = rubrics_dir
 
     def evaluate(self, notebook_json: dict, student_name: str,
-                 filename: str, rubric_content: str) -> Evaluation:
+                 filename: str, rubric_content: str,
+                 include_code_analysis: bool = True) -> Evaluation:
         """Evaluate a notebook against a rubric.
 
         Args:
@@ -21,25 +24,35 @@ class EvaluationAgent:
             student_name: Student name.
             filename: Notebook filename.
             rubric_content: Rubric Markdown content.
+            include_code_analysis: Whether to include static code analysis.
 
         Returns:
             Evaluation with grade and report.
         """
         cleaned = clean_notebook(notebook_json)
-        prompt = self._build_prompt(rubric_content, cleaned, student_name, filename)
+        code_metrics = None
+        if include_code_analysis:
+            code_metrics = analyze_code(notebook_json)
+        prompt = self._build_prompt(rubric_content, cleaned, student_name,
+                                     filename, code_metrics)
         raw_response = self.llm.evaluate_notebook(prompt)
         return self._parse_response(raw_response, student_name, filename)
 
     def _build_prompt(self, rubric: str, notebook_text: str,
-                      student_name: str, filename: str) -> str:
+                      student_name: str, filename: str,
+                      code_metrics: Optional[object] = None) -> str:
         """Build evaluation prompt."""
+        code_analysis = ""
+        if code_metrics:
+            code_analysis = f"\n{format_metrics_for_llm(code_metrics)}"
+
         return f"""{rubric}
 
 ### INSTRUCCIONES DE EVALUACIÓN:
 Primero averigua cuántos ejercicios hay en el notebook y verifica que cada uno tenga al menos una celda de código como respuesta. Si no hay código Python en la solución, el ejercicio probablemente está sin resolver. Revisa uno por uno, leyendo cuidadosamente.
 Si la respuesta está presente, evalúa la basándote en los criterios de la rúbrica anterior.
 Resolver un problema de más de una manera es un plus, siempre que todas las respuestas sean correctas.
-Verifica si el código es correcto ejecutándolo mentalmente, paso a paso. Si encuentras algún error, anótalo.
+Verifica si el código es correcto ejecutándolo mentalmente, paso a paso. Si encuentras algún error, anótalo.{code_analysis}
 
 **IMPORTANTE: Aplica la escala de calificación de la rúbrica de forma estricta.**
 - Si la mayoría de ejercicios están completados y el código es mayoritariamente correcto, la calificación debe ser 'Bien' o superior.

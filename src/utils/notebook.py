@@ -3,8 +3,8 @@ import json
 from pathlib import Path
 
 
-def clean_notebook(notebook_json: dict, max_output_chars: int = 800,
-                   max_total_chars: int = 15000) -> str:
+def clean_notebook(notebook_json: dict, max_output_chars: int = 2000,
+                   max_total_chars: int = 30000) -> str:
     """Clean a Jupyter notebook JSON into readable text.
 
     Args:
