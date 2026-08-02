@@ -70,6 +70,8 @@ class Database:
                 numeric_grade INTEGER NOT NULL,
                 markdown_report TEXT NOT NULL,
                 unresolved_exercises INTEGER DEFAULT 0,
+                override_reason TEXT,
+                override_at TEXT,
                 evaluated_at TEXT DEFAULT (datetime('now')),
                 FOREIGN KEY (student_id) REFERENCES students(id),
                 FOREIGN KEY (assignment_id) REFERENCES assignments(id)
@@ -222,6 +224,34 @@ class Database:
             (assignment_id,)
         ).fetchone()
         return dict(row) if row else {}
+
+    def get_all_evaluations(self) -> list[dict]:
+        """Get all evaluations."""
+        rows = self.conn.execute(
+            """SELECT e.*, s.name as student_name, a.name as assignment_name
+               FROM evaluations e
+               JOIN students s ON e.student_id = s.id
+               JOIN assignments a ON e.assignment_id = a.id
+               ORDER BY e.evaluated_at DESC"""
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def update_evaluation_grade(self, eval_id: int, new_grade: str,
+                                 reason: Optional[str] = None) -> bool:
+        """Update evaluation grade with override reason."""
+        from datetime import datetime
+        grade_map = {"Mal": 3, "Regular": 5, "Bien": 7, "Excepcional": 9}
+        numeric = grade_map.get(new_grade, 5)
+        self.conn.execute(
+            """UPDATE evaluations
+               SET grade = ?, numeric_grade = ?,
+                   override_reason = ?,
+                   override_at = datetime('now')
+               WHERE id = ?""",
+            (new_grade, numeric, reason, eval_id)
+        )
+        self.conn.commit()
+        return self.conn.rowsaffected > 0
 
     # Rubric operations
     def add_rubric(self, rubric: Rubric) -> int:
