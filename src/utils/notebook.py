@@ -63,19 +63,29 @@ def clean_notebook(notebook_json: dict, max_output_chars: int = 2000,
     return cleaned
 
 
-def classify_task(notebook_text: str) -> str:
-    """Classify notebook task based on content.
+def classify_task(notebook_text: str, filename: str = "") -> str:
+    """Classify notebook task based on content and filename.
 
     Args:
         notebook_text: Cleaned notebook text.
+        filename: Notebook filename (used as fallback for classification).
 
     Returns:
         Task key (e.g., "numpy_i", "numpy_ii", "pandas_i").
     """
     lower = notebook_text.lower()
+    filename_lower = filename.lower()
 
+    # Check filename first (more reliable than content)
+    if "numpy_ii" in filename_lower or "numpy2" in filename_lower or "numpy_2" in filename_lower:
+        return "numpy_ii"
+    if "numpy_i" in filename_lower or "numpy1" in filename_lower or "numpy_1" in filename_lower:
+        return "numpy_i"
+
+    # Fallback to content-based classification
     if "numpy" in lower:
-        advanced_keywords = ["structured array", "broadcasting", "eigenvalue", "polynomial"]
+        advanced_keywords = ["structured array", "broadcasting", "eigenvalue", "polynomial",
+                            "ejercicio 18", "ejercicio 19", "ejercicio 20", "ejercicio 21"]
         if any(kw in lower for kw in advanced_keywords):
             return "numpy_ii"
         return "numpy_i"

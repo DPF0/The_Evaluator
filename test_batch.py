@@ -39,7 +39,7 @@ def evaluate_one(item):
     student_name, filepath = item
     start = time.time()
     try:
-        result = orchestrator.evaluate_local_notebook(student_name, filepath, "numpy_i")
+        result = orchestrator.evaluate_local_notebook(student_name, filepath)
         elapsed = time.time() - start
         return {"student": student_name, "grade": result.grade.value, "numeric": result.numeric_grade, "time": f"{elapsed:.1f}s", "status": "OK"}
     except Exception as e:

@@ -1,11 +1,12 @@
 """Orchestrator — coordinates agents and manages evaluation workflow."""
+from typing import Optional
 from src.db import Database
 from src.llm import LLMClient
 from src.models import Student, Assignment, Evaluation, Rubric, Grade
 from src.agents.evaluation import EvaluationAgent
 from src.agents.rubric import RubricAgent
 from src.agents.report import ReportAgent
-from src.utils.notebook import download_notebook_from_github, classify_task
+from src.utils.notebook import download_notebook_from_github, clean_notebook, classify_task
 from src.utils.email import send_feedback_email
 
 
@@ -49,8 +50,11 @@ class Orchestrator:
         # Get assignment
         assignment = self.db.get_assignment(task_key)
         if not assignment:
+            parts = task_key.split("_")
+            roman = {"i": "I", "ii": "II", "iii": "III"}
+            assign_name = " ".join(roman.get(p.lower(), p.capitalize()) for p in parts)
             assignment_id = self.db.add_assignment(Assignment(
-                name=filename,
+                name=assign_name,
                 module=task_key,
                 topic_key=task_key,
             ))
@@ -72,13 +76,13 @@ class Orchestrator:
         return evaluation
 
     def evaluate_local_notebook(self, student_name: str, filepath: str,
-                                 task_key: str) -> Evaluation:
+                                 task_key: Optional[str] = None) -> Evaluation:
         """Evaluate a notebook from local file.
 
         Args:
             student_name: Student name.
             filepath: Path to .ipynb file.
-            task_key: Task key (e.g., "numpy_i").
+            task_key: Task key (e.g., "numpy_i"). If None, auto-detected from content.
 
         Returns:
             Evaluation object.
@@ -100,11 +104,19 @@ class Orchestrator:
 
         filename = Path(filepath).name
 
+        # Auto-detect task if not provided
+        if not task_key:
+            cleaned = clean_notebook(notebook_json)
+            task_key = classify_task(cleaned, filename)
+
         # Get assignment
         assignment = self.db.get_assignment(task_key)
         if not assignment:
+            parts = task_key.split("_")
+            roman = {"i": "I", "ii": "II", "iii": "III"}
+            assign_name = " ".join(roman.get(p.lower(), p.capitalize()) for p in parts)
             assignment_id = self.db.add_assignment(Assignment(
-                name=filename,
+                name=assign_name,
                 module=task_key,
                 topic_key=task_key,
             ))

@@ -76,7 +76,7 @@ def main():
         )
 
         st.dataframe(
-            display_df[["student_name", "assignment_name", "grade", "numeric_grade", "filename", "created_at"]],
+            display_df[["student_name", "assignment_name", "grade", "numeric_grade", "filename", "evaluated_at"]],
             use_container_width=True,
         )
 
@@ -94,7 +94,7 @@ def main():
                 with col2:
                     st.write(f"**Calificación:** {eval_data['grade']} ({eval_data['numeric_grade']}/10)")
                     st.write(f"**Ejercicios sin resolver:** {eval_data.get('unresolved_exercises', 0)}")
-                    st.write(f"**Fecha:** {eval_data['created_at']}")
+                    st.write(f"**Fecha:** {eval_data['evaluated_at']}")
 
                 st.markdown(eval_data["markdown_report"])
 
