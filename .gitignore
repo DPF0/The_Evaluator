@@ -1,6 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+.eggs/
+dist/
+build/
+venv/
+.venv/
+env/
+
 # Student data (sensitive)
 25FEBBILFTDS-*/
 Repos Github.xlsx
+
+# Past bootcamp materials
+Past Bootcamps/
+
+# Data
+data/
+config.json
 
 # Config with API keys
 opencode.json
