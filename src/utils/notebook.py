@@ -22,7 +22,9 @@ def clean_notebook(notebook_json: dict, max_output_chars: int = 800,
         cell_type = cell.get("cell_type", "unknown")
         source = cell.get("source", "")
         if isinstance(source, list):
-            source = "".join(source)
+            source = "".join(str(line) for line in source)
+        elif not isinstance(source, str):
+            source = str(source)
 
         clean_text.append(f"--- Celda {i + 1} ({cell_type}) ---")
         clean_text.append(source.strip())
@@ -33,15 +35,22 @@ def clean_notebook(notebook_json: dict, max_output_chars: int = 800,
                 clean_text.append("## OUTPUTS:")
                 for output in outputs:
                     # Skip images
-                    if output.get("data", {}).get("image/png") or \
-                       output.get("data", {}).get("image/jpeg"):
-                        continue
+                    data = output.get("data", {})
+                    if isinstance(data, dict):
+                        if data.get("image/png") or data.get("image/jpeg"):
+                            continue
 
                     text = ""
                     if output.get("output_type") == "stream":
                         text = output.get("text", "")
-                    elif output.get("data", {}).get("text/plain"):
-                        text = "".join(output["data"]["text/plain"])
+                        if isinstance(text, list):
+                            text = "".join(str(t) for t in text)
+                    elif isinstance(data, dict) and data.get("text/plain"):
+                        tp = data["text/plain"]
+                        if isinstance(tp, list):
+                            text = "".join(str(t) for t in tp)
+                        else:
+                            text = str(tp)
 
                     if text:
                         if len(text) > max_output_chars:

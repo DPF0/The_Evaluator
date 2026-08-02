@@ -41,6 +41,11 @@ Si la respuesta está presente, evalúa la basándote en los criterios de la rú
 Resolver un problema de más de una manera es un plus, siempre que todas las respuestas sean correctas.
 Verifica si el código es correcto ejecutándolo mentalmente, paso a paso. Si encuentras algún error, anótalo.
 
+**IMPORTANTE: Aplica la escala de calificación de la rúbrica de forma estricta.**
+- Si la mayoría de ejercicios están completados y el código es mayoritariamente correcto, la calificación debe ser 'Bien' o superior.
+- 'Regular' se reserva para trabajos con muchos errores conceptuales o incompletos de forma significativa.
+- 'Mal' solo si más de la mitad de los ejercicios están sin resolver o hay problemas graves.
+
 ### FORMATO DEL INFORME:
 Estructura el informe final en español de España como sigue:
 - Título del informe con el nombre del alumno y el nombre del archivo.
@@ -64,14 +69,19 @@ Aquí está el notebook a revisar:
         """Parse LLM response into structured evaluation."""
         import re
 
-        # Extract grade
+        # Extract grade - find grade after "Calificación Global" heading
         grade_text = "Regular"
         match = re.search(
-            r"(?:Calificación Global|Nota)[:\s]*\**\**?(Mal|Regular|Bien|Excepcional)",
-            raw_text, flags=re.I
+            r"Calificación Global.*?\*\*(Mal|Regular|Bien|Excepcional)\*\*",
+            raw_text, flags=re.I | re.DOTALL
         )
         if match:
             grade_text = match[1]
+        else:
+            # Fallback: any grade mention
+            matches = re.findall(r"\b(Mal|Regular|Bien|Excepcional)\b", raw_text, flags=re.I)
+            if matches:
+                grade_text = matches[0]
 
         grade = Grade(grade_text)
 
