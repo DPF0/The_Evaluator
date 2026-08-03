@@ -2,19 +2,36 @@
 
 AI-powered auto-grader for Jupyter notebook assignments in a Data Science bootcamp.
 
-An n8n workflow downloads student notebooks from GitHub, evaluates them with a local LLM against rubrics, and returns a Markdown grade report.
+Evaluates student notebooks against rubrics using a local LLM, generates personalized feedback reports in Spanish, and provides a teacher dashboard for review and approval.
 
 ## Architecture
 
 ```
-Streamlit UI → POST → n8n Webhook → Download notebook → Clean & classify → Lookup rubric → LLM evaluation → Parse grade → Return JSON
+Student Notebook → Clean & Extract Code → Static Analysis → LLM Evaluation → Grade Report → SQLite DB
+                                                                                ↓
+                                                                        Teacher Dashboard (Streamlit)
 ```
 
 ## Components
 
-- **n8n workflow** — Orchestration pipeline (see `n8n/`)
-- **Rubrics** — Evaluation criteria for each assignment (see `rubrics/`)
-- **Streamlit UI** — Frontend for instructors
+- **`src/`** — Core evaluation pipeline
+  - `agents/` — Evaluation, Rubric, Report, and Orchestrator agents
+  - `llm.py` — LLM client abstraction (OpenAI-compatible API)
+  - `db.py` — SQLite database layer
+  - `utils/` — Notebook cleaning, static code analysis, task classification
+- **`apps/dashboard_app.py`** — Streamlit teacher dashboard for reviewing evaluations
+- **`tests/`** — Batch testing scripts
+- **`rubrics/`** — Evaluation criteria (source of truth)
+- **`docs/`** — Project documentation and diagrams
+
+## Features
+
+- **Automated grading** with LLM-based evaluation against rubrics
+- **Static code analysis** using AST for objective metrics
+- **Few-shot calibration** for consistent grading aligned with reference evaluations
+- **Teacher dashboard** for review, approval, and export
+- **Batch evaluation** support for multiple notebooks
+- **SQLite storage** for persistent evaluation records
 
 ## Grade Scale
 
@@ -27,20 +44,44 @@ Streamlit UI → POST → n8n Webhook → Download notebook → Clean & classify
 
 ## Requirements
 
-- n8n instance (v2.32.7)
-- Local LLM server (OpenAI-compatible API)
-- Streamlit + requests
+- Python 3.10+
+- Local LLM server (OpenAI-compatible API on `http://192.168.0.37:8084/v1`)
+- Dependencies: `streamlit`, `requests`, `nbformat`, `openai`
 
 ## Usage
 
-```bash
-streamlit run grader_app.py
-```
-
-Test the webhook:
+### CLI
 
 ```bash
-curl -X POST http://192.168.0.37:5678/webhook/grader \
-  -H "Content-Type: application/json" \
-  -d '{"student_name": "Test Student", "filename": "Ejercicios_Numpy_I.ipynb", "github_url": "<raw-github-url>"}'
+# Evaluate a single notebook
+python main.py evaluate --student "Student Name" --file "path/to/notebook.ipynb"
+
+# Generate report
+python main.py report --student "Student Name" --assignment "NumPy I"
 ```
+
+### Teacher Dashboard
+
+```bash
+streamlit run apps/dashboard_app.py
+```
+
+### Batch Testing
+
+```bash
+python tests/test_full_batch.py
+```
+
+## Configuration
+
+Edit `config.json` to adjust:
+- LLM endpoint and parameters
+- Database path
+- Rubric directory
+- Notebook cleaning limits
+
+## Project Status
+
+- **Week 1 complete**: Core pipeline, CLI, dashboard, batch testing
+- **Grading calibration**: 64% alignment with reference evaluations (deepseek-r1)
+- **Week 2 planned**: LangGraph multi-agent integration for enhanced evaluation workflow
