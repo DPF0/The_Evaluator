@@ -16,7 +16,7 @@ class Orchestrator:
     def __init__(self, db: Database, llm: LLMClient, rubrics_dir: str = "rubrics"):
         self.db = db
         self.llm = llm
-        self.eval_agent = EvaluationAgent(llm, rubrics_dir)
+        self.eval_agent = EvaluationAgent(llm, rubrics_dir, db)
         self.rubric_agent = RubricAgent(llm, rubrics_dir)
         self.report_agent = ReportAgent(llm)
 
@@ -64,9 +64,10 @@ class Orchestrator:
         # Get rubric
         rubric_content = self.rubric_agent.get_rubric(task_key)
 
-        # Evaluate
+        # Evaluate (with reference metadata)
         evaluation = self.eval_agent.evaluate(
-            notebook_json, student_name, filename, rubric_content
+            notebook_json, student_name, filename, rubric_content,
+            topic_key=task_key
         )
         evaluation.student_id = student_id
         evaluation.assignment_id = assignment_id
@@ -126,9 +127,10 @@ class Orchestrator:
         # Get rubric
         rubric_content = self.rubric_agent.get_rubric(task_key)
 
-        # Evaluate
+        # Evaluate (with reference metadata)
         evaluation = self.eval_agent.evaluate(
-            notebook_json, student_name, filename, rubric_content
+            notebook_json, student_name, filename, rubric_content,
+            topic_key=task_key
         )
         evaluation.student_id = student_id
         evaluation.assignment_id = assignment_id

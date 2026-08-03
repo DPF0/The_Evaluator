@@ -1,22 +1,26 @@
 """Evaluation Agent — evaluates notebooks against rubrics using LLM."""
+import json
 from typing import Optional
 from src.llm import LLMClient
 from src.models import Evaluation, ExerciseIssue, Grade
 from src.utils.notebook import clean_notebook, classify_task
 from src.utils.rubrics import load_rubric_from_file
 from src.utils.code_analysis import analyze_code, format_metrics_for_llm
+from src.utils.reference import format_reference_for_prompt
 
 
 class EvaluationAgent:
     """Agent that evaluates student notebooks against rubrics."""
 
-    def __init__(self, llm: LLMClient, rubrics_dir: str = "rubrics"):
+    def __init__(self, llm: LLMClient, rubrics_dir: str = "rubrics", db=None):
         self.llm = llm
         self.rubrics_dir = rubrics_dir
+        self.db = db
 
     def evaluate(self, notebook_json: dict, student_name: str,
-                 filename: str, rubric_content: str,
-                 include_code_analysis: bool = True) -> Evaluation:
+                  filename: str, rubric_content: str,
+                  topic_key: str = "",
+                  include_code_analysis: bool = True) -> Evaluation:
         """Evaluate a notebook against a rubric.
 
         Args:
@@ -24,6 +28,7 @@ class EvaluationAgent:
             student_name: Student name.
             filename: Notebook filename.
             rubric_content: Rubric Markdown content.
+            topic_key: Topic key for reference metadata lookup.
             include_code_analysis: Whether to include static code analysis.
 
         Returns:
@@ -33,18 +38,31 @@ class EvaluationAgent:
         code_metrics = None
         if include_code_analysis:
             code_metrics = analyze_code(notebook_json)
+
+        # Load reference metadata if available
+        ref_metadata = None
+        if self.db and topic_key:
+            ref_row = self.db.get_reference_metadata(topic_key)
+            if ref_row:
+                ref_metadata = ref_row  # Pass full DB row
+
         prompt = self._build_prompt(rubric_content, cleaned, student_name,
-                                     filename, code_metrics)
+                                      filename, code_metrics, ref_metadata)
         raw_response = self.llm.evaluate_notebook(prompt)
         return self._parse_response(raw_response, student_name, filename)
 
     def _build_prompt(self, rubric: str, notebook_text: str,
-                      student_name: str, filename: str,
-                      code_metrics: Optional[object] = None) -> str:
+                       student_name: str, filename: str,
+                       code_metrics: Optional[object] = None,
+                       ref_metadata: Optional[dict] = None) -> str:
         """Build evaluation prompt."""
         code_analysis = ""
         if code_metrics:
             code_analysis = f"\n{format_metrics_for_llm(code_metrics)}"
+
+        reference_info = ""
+        if ref_metadata:
+            reference_info = f"\n{format_reference_for_prompt(ref_metadata)}"
 
         return f"""{rubric}
 
@@ -52,7 +70,7 @@ class EvaluationAgent:
 Primero averigua cuántos ejercicios hay en el notebook y verifica que cada uno tenga al menos una celda de código como respuesta. Si no hay código Python en la solución, el ejercicio probablemente está sin resolver. Revisa uno por uno, leyendo cuidadosamente.
 Si la respuesta está presente, evalúa la basándote en los criterios de la rúbrica anterior.
 Resolver un problema de más de una manera es un plus, siempre que todas las respuestas sean correctas.
-Verifica si el código es correcto ejecutándolo mentalmente, paso a paso. Si encuentras algún error, anótalo.{code_analysis}
+Verifica si el código es correcto ejecutándolo mentalmente, paso a paso. Si encuentras algún error, anótalo.{code_analysis}{reference_info}
 
 **CRITERIOS DE CALIFICACIÓN ESTRICTOS:**
 - **Excepcional (9-10)**: TODOS los ejercicios resueltos correctamente + código limpio, eficiente, con buenas prácticas. Sin errores ni advertencias.

@@ -104,6 +104,15 @@ class Database:
                 ON evaluations(assignment_id);
             CREATE INDEX IF NOT EXISTS idx_evaluations_grade
                 ON evaluations(grade);
+
+            CREATE TABLE IF NOT EXISTS reference_metadata (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                topic_key TEXT NOT NULL UNIQUE,
+                total_exercises INTEGER NOT NULL,
+                exercises_requiring_code INTEGER NOT NULL,
+                exercises_json TEXT NOT NULL,
+                created_at TEXT DEFAULT (datetime('now'))
+            );
         """)
         self.conn.commit()
 
@@ -277,6 +286,27 @@ class Database:
         """Get all rubrics."""
         rows = self.conn.execute("SELECT * FROM rubrics ORDER BY module, assignment_name").fetchall()
         return [dict(r) for r in rows]
+
+    # Reference metadata operations
+    def add_reference_metadata(self, topic_key: str, total_exercises: int,
+                                exercises_requiring_code: int,
+                                exercises_json: str) -> int:
+        """Add reference metadata for a task."""
+        cursor = self.conn.execute(
+            """INSERT OR REPLACE INTO reference_metadata
+               (topic_key, total_exercises, exercises_requiring_code, exercises_json)
+               VALUES (?, ?, ?, ?)""",
+            (topic_key, total_exercises, exercises_requiring_code, exercises_json)
+        )
+        self.conn.commit()
+        return cursor.lastrowid
+
+    def get_reference_metadata(self, topic_key: str) -> Optional[dict]:
+        """Get reference metadata for a task."""
+        row = self.conn.execute(
+            "SELECT * FROM reference_metadata WHERE topic_key = ?", (topic_key,)
+        ).fetchone()
+        return dict(row) if row else None
 
     def close(self):
         """Close database connections."""
