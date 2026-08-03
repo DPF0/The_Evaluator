@@ -4,27 +4,17 @@ from pathlib import Path
 
 
 def clean_notebook(notebook_json: dict) -> str:
-    """Clean a Jupyter notebook by removing outputs, keeping all code intact.
+    """Clean a Jupyter notebook by removing outputs, keeping all code/markdown intact.
 
-    Based on my_little_grader/v5 approach: clear outputs via nbformat,
-    then extract source cells. No truncation - let LLM context window handle it.
+    No truncation - let LLM context window handle it.
 
     Args:
         notebook_json: Parsed notebook JSON dict.
 
     Returns:
-        Cleaned notebook text with all code cells preserved.
+        Cleaned notebook text with all code/markdown cells preserved.
     """
-    import nbformat
-    from nbconvert.preprocessors import ClearOutputPreprocessor
-
-    # Convert to nbformat and clear outputs
-    nb = nbformat.from_dict(notebook_json)
-    clear_processor = ClearOutputPreprocessor()
-    nb = clear_processor.preprocess(nb, {})
-
-    # Extract cells
-    cells = nbformat.to_dict(nb).get("cells", [])
+    cells = notebook_json.get("cells", [])
     clean_text = []
 
     for i, cell in enumerate(cells):
