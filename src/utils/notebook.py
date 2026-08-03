@@ -3,19 +3,28 @@ import json
 from pathlib import Path
 
 
-def clean_notebook(notebook_json: dict, max_output_chars: int = 2000,
-                   max_total_chars: int = 30000) -> str:
-    """Clean a Jupyter notebook JSON into readable text.
+def clean_notebook(notebook_json: dict) -> str:
+    """Clean a Jupyter notebook by removing outputs, keeping all code intact.
+
+    Based on my_little_grader/v5 approach: clear outputs via nbformat,
+    then extract source cells. No truncation - let LLM context window handle it.
 
     Args:
         notebook_json: Parsed notebook JSON dict.
-        max_output_chars: Max characters per output cell.
-        max_total_chars: Max total characters for cleaned notebook.
 
     Returns:
-        Cleaned notebook text.
+        Cleaned notebook text with all code cells preserved.
     """
-    cells = notebook_json.get("cells", [])
+    import nbformat
+    from nbconvert.preprocessors import ClearOutputPreprocessor
+
+    # Convert to nbformat and clear outputs
+    nb = nbformat.from_dict(notebook_json)
+    clear_processor = ClearOutputPreprocessor()
+    nb = clear_processor.preprocess(nb, {})
+
+    # Extract cells
+    cells = nbformat.to_dict(nb).get("cells", [])
     clean_text = []
 
     for i, cell in enumerate(cells):
@@ -29,67 +38,7 @@ def clean_notebook(notebook_json: dict, max_output_chars: int = 2000,
         clean_text.append(f"--- Celda {i + 1} ({cell_type}) ---")
         clean_text.append(source.strip())
 
-        if cell_type == "code":
-            outputs = cell.get("outputs", [])
-            if outputs:
-                clean_text.append("## OUTPUTS:")
-                for output in outputs:
-                    # Skip images
-                    data = output.get("data", {})
-                    if isinstance(data, dict):
-                        if data.get("image/png") or data.get("image/jpeg"):
-                            continue
-
-                    text = ""
-                    if output.get("output_type") == "stream":
-                        text = output.get("text", "")
-                        if isinstance(text, list):
-                            text = "".join(str(t) for t in text)
-                    elif isinstance(data, dict) and data.get("text/plain"):
-                        tp = data["text/plain"]
-                        if isinstance(tp, list):
-                            text = "".join(str(t) for t in tp)
-                        else:
-                            text = str(tp)
-
-                    if text:
-                        if len(text) > max_output_chars:
-                            text = text[:max_output_chars] + "\n... [Output truncado] ..."
-                        clean_text.append(text)
-
-    cleaned = "\n".join(clean_text)
-    if len(cleaned) > max_total_chars:
-        cleaned = cleaned[:max_total_chars] + "\n\n[Nota: Notebook muy largo, se ha truncado el final]"
-    return cleaned
-
-
-def clean_notebook_nbformat(notebook_json: dict, max_output_chars: int = 2000,
-                            max_total_chars: int = 30000) -> str:
-    """Clean a Jupyter notebook using nbformat for better processing.
-
-    Args:
-        notebook_json: Parsed notebook JSON dict.
-        max_output_chars: Max characters per output cell.
-        max_total_chars: Max total characters for cleaned notebook.
-
-    Returns:
-        Cleaned notebook text.
-    """
-    import nbformat
-    from nbconvert.preprocessors import ClearOutputPreprocessor
-
-    # Convert to nbformat NotebookNode
-    nb = nbformat.from_dict(notebook_json)
-
-    # Clear outputs
-    clear_processor = ClearOutputPreprocessor()
-    nb = clear_processor.preprocess(nb, {})
-
-    # Convert back to dict
-    notebook_json = nbformat.to_dict(nb)
-
-    # Use standard cleaning
-    return clean_notebook(notebook_json, max_output_chars, max_total_chars)
+    return "\n".join(clean_text)
 
 
 def classify_task(notebook_text: str, filename: str = "") -> str:
