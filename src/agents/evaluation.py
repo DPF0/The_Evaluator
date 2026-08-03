@@ -82,10 +82,31 @@ Verifica si el código es correcto ejecutándolo mentalmente, paso a paso. Si en
 
 ### EJEMPLOS DE REFERENCIA:
 
-**EjemploRegular (Regular):**
+**Ejemplo Mal (Mal):**
+- 9 de 19 ejercicios resueltos (47% < 50%)
+- Ejercicios 10-16 sin código (solo markdown o vacíos)
+- Errores conceptuales en ejercicios resueltos
+- Calificación: Mal
+
+**Ejemplo Mal 2 (Mal):**
+- Ejercicio 3: crea array 5x3 en vez de 3x3 con True
+- Ejercicio 11: celda de código vacía (sin resolver)
+- Ejercicio 17: respuesta solo en markdown, sin código
+- Múltiples ejercicios con enfoque incorrecto
+- Calificación: Mal
+
+**Ejemplo Regular (Regular):**
 - Todos los ejercicios tienen código, pero varios errores conceptuales
 - Código funcional pero con errores en resultados
 - Variables poco descriptivas, sin comentarios
+- Enfoques ineficientes (ej: np.arange(9).reshape(3,3) >= 0 en vez de np.full((3,3), True))
+- Calificación: Regular
+
+**Ejemplo Regular 2 (Regular):**
+- 12 de 14 ejercicios resueltos correctamente
+- Step 8: ordena Red Cards y Yellow Cards por separado (debería ser combinado)
+- Variables con typos ("disciplina" en vez de "discipline")
+- Sin comentarios en el código
 - Calificación: Regular
 
 **Ejemplo Bien (Bien):**
