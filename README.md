@@ -8,21 +8,32 @@ Evaluates student notebooks against rubrics using a local LLM, generates persona
 
 ```
 Student Notebook → Clean & Extract Code → Static Analysis → LLM Evaluation → Grade Report → SQLite DB
-                                                                                ↓
-                                                                        Teacher Dashboard (Streamlit)
+                                                                                    ↓
+                                                                            Teacher Dashboard (Streamlit)
+```
+
+```
+main.py (CLI)
+  └─ src/agents/orchestrator.py
+       ├─ Evaluation agent (LLM grading + grade extraction)
+       ├─ Report agent (Markdown feedback in Spanish)
+       └─ Rubric agent (generate rubrics from reference notebooks)
+
+apps/dashboard_app.py (Streamlit teacher dashboard)
+  └─ SQLite database (evaluations, students, rubrics, reference_metadata)
 ```
 
 ## Components
 
 - **`src/`** — Core evaluation pipeline
   - `agents/` — Evaluation, Rubric, Report, and Orchestrator agents
-  - `llm.py` — LLM client abstraction (OpenAI-compatible API)
+  - `llm.py` — LLM client abstraction (OpenAI-compatible API, supports RoundRobinLLMClient)
   - `db.py` — SQLite database layer
-  - `utils/` — Notebook cleaning, static code analysis, task classification
+  - `utils/` — Notebook cleaning (nbformat), static code analysis, task classification
 - **`apps/dashboard_app.py`** — Streamlit teacher dashboard for reviewing evaluations
-- **`tests/`** — Batch testing scripts
+- **`tests/`** — Structured testing infrastructure (fixed test set, model configs, results)
 - **`rubrics/`** — Evaluation criteria (source of truth)
-- **`docs/`** — Project documentation and diagrams
+- **`docs/`** — Project documentation, benchmark results
 
 ## Features
 
@@ -32,6 +43,7 @@ Student Notebook → Clean & Extract Code → Static Analysis → LLM Evaluation
 - **Teacher dashboard** for review, approval, and export
 - **Batch evaluation** support for multiple notebooks
 - **SQLite storage** for persistent evaluation records
+- **Structured benchmark testing** — fixed test set, model configs, registered results
 
 ## Grade Scale
 
@@ -53,11 +65,17 @@ Student Notebook → Clean & Extract Code → Static Analysis → LLM Evaluation
 ### CLI
 
 ```bash
-# Evaluate a single notebook
-python main.py evaluate --student "Student Name" --file "path/to/notebook.ipynb"
+# Initialize database and load rubrics
+python3 main.py setup
 
-# Generate report
-python main.py report --student "Student Name" --assignment "NumPy I"
+# Evaluate a single notebook
+python3 main.py evaluate --student "Student Name" --notebook "path/to/notebook.ipynb"
+
+# Generate Markdown feedback report
+python3 main.py report --student "Student Name"
+
+# Generate rubric from reference notebook
+python3 main.py rubric --topic "topic" --reference "path/to/reference.ipynb"
 ```
 
 ### Teacher Dashboard
@@ -66,22 +84,39 @@ python main.py report --student "Student Name" --assignment "NumPy I"
 streamlit run apps/dashboard_app.py
 ```
 
-### Batch Testing
+### Benchmark Testing
 
 ```bash
-python tests/test_full_batch.py
+# Run test on a model (31 notebooks, same test set for all models)
+python3 tests/run_test.py --model gemma_4_12b_q4k_inst1
 ```
 
 ## Configuration
 
-Edit `config.json` to adjust:
+Edit `src/config.py` to adjust:
 - LLM endpoint and parameters
 - Database path
 - Rubric directory
-- Notebook cleaning limits
+- Paths
+
+## Benchmark Results
+
+7 models tested on the same 31 notebooks (16 NumPy I, 15 NumPy II) with Deepseek-R1-32B reference grades.
+
+| Rank | Model | Match Rate | Effective s/nb | Mode |
+|------|-------|-----------|----------------|------|
+| 1 | Gemma 4 12B Q4_K | 80.6% | 12.7s | Dual instance |
+| 2 | Qwen3-Coder 30B Q4_K | 74.2% | 14.4s | Split |
+| 3 | Gemma 4 26B Q4_K | 71.0% | 15.6s | Split |
+| 4 | GPT-oss 20B Q6_K | 51.6% | 65.0s | Split |
+| 5 | Qwen3.6 35B Q4_K | 48.4% | 27.5s | Split |
+| 6 | Gemma 4 12B FT | 41.9% | 12.0s | Dual instance |
+| 7 | Qwen3.5 9B Q4_K | 16.1% | 17.7s | Dual instance |
+
+Full benchmark documentation: `docs/llm_benchmark_results.md`
 
 ## Project Status
 
-- **Week 1 complete**: Core pipeline, CLI, dashboard, batch testing
-- **Grading calibration**: 64% alignment with reference evaluations (deepseek-r1)
-- **Week 2 planned**: LangGraph multi-agent integration for enhanced evaluation workflow
+- **Core pipeline**: Complete — CLI, agents, dashboard, batch testing
+- **Benchmark testing**: Complete — 7 models evaluated, structured test infrastructure
+- **Best model**: Gemma 4 12B Q4_K (80.6% match rate, 12.7s effective/nb)

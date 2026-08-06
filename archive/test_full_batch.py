@@ -3,9 +3,9 @@ import concurrent.futures
 import json
 import time
 from pathlib import Path
-from src.config import get_config
+from src.config import get_config, LLMConfig
 from src.db import Database
-from src.llm import LLMClient
+from src.llm import LLMClient, RoundRobinLLMClient
 from src.agents.orchestrator import Orchestrator
 from src.utils.notebook import clean_notebook, classify_task
 
@@ -29,6 +29,10 @@ ASSIGNMENTS = {
     },
 }
 
+# LLM backend ports for round-robin distribution
+LLM_PORTS = ["8084"]
+
+
 def find_notebooks(assignments):
     """Find all notebooks for each assignment."""
     all_notebooks = []
@@ -41,9 +45,16 @@ def find_notebooks(assignments):
             if not student_dir.is_dir():
                 continue
             for nb in student_dir.glob(config["pattern"]):
-                # Extract student name from directory
                 student_name = student_dir.name.split("_assignsubmission")[0]
-                all_notebooks.append((student_name, str(nb), task_key))
+                # Use filename to distinguish numpy_i vs numpy_ii
+                filename = nb.name.lower()
+                if "numpy_ii" in filename or "numpy2" in filename:
+                    actual_task = "numpy_ii"
+                elif "numpy_i" in filename or "numpy1" in filename:
+                    actual_task = "numpy_i"
+                else:
+                    actual_task = task_key  # Use directory-based for others
+                all_notebooks.append((student_name, str(nb), actual_task))
     return all_notebooks
 
 
@@ -94,7 +105,16 @@ def main():
     global orchestrator
 
     notebooks = find_notebooks(ASSIGNMENTS)
-    print(f"Found {len(notebooks)} notebooks to evaluate\n")
+
+    # Filter to only notebooks with deepseek evaluations
+    notebooks_with_deepseek = [(s, f, t) for s, f, t in notebooks if get_deepseek_grade(f)]
+    print(f"Found {len(notebooks)} notebooks total, {len(notebooks_with_deepseek)} with deepseek-r1 evaluations\n")
+
+    if not notebooks_with_deepseek:
+        print("No notebooks with deepseek evaluations found. Exiting.")
+        return
+
+    notebooks = notebooks_with_deepseek
 
     # Show notebook sizes
     print("Notebook sizes:")
@@ -108,11 +128,29 @@ def main():
 
     print()
 
-    # Initialize
+    # Initialize LLM clients for round-robin distribution
     config = get_config()
+    base_url = config.llm.base_url.rsplit(":", 1)[0]
+    llm_clients = []
+    for port in LLM_PORTS:
+        port_config = LLMConfig(
+            provider=config.llm.provider,
+            base_url=f"{base_url}:{port}/v1",
+            model=config.llm.model,
+            api_key=config.llm.api_key,
+            temperature=config.llm.temperature,
+            top_p=config.llm.top_p,
+            top_k=config.llm.top_k,
+            seed=config.llm.seed,
+            max_tokens=config.llm.max_tokens,
+        )
+        llm_clients.append(LLMClient(port_config))
+
+    llm = RoundRobinLLMClient(llm_clients)
     db = Database(config.database.path)
-    llm = LLMClient(config.llm)
     orchestrator = Orchestrator(db, llm, config.paths.rubrics_dir)
+
+    print(f"Using {len(LLM_PORTS)} LLM backends (ports {LLM_PORTS}), 3 concurrent workers\n")
 
     # Evaluate concurrently
     results = []
@@ -121,7 +159,7 @@ def main():
         for future in concurrent.futures.as_completed(futures):
             r = future.result()
             results.append(r)
-            match = "✅" if r["grade"] == r["deepseek"] or r["deepseek"] == "N/A" else "❌"
+            match = "✅" if r["grade"] == r["deepseek"] else "❌"
             print(f"[{r['time']}] {match} {r['task']:20} | {r['student']:30} | {r['grade']:12} (deepseek: {r['deepseek']})")
 
     # Summary
@@ -130,7 +168,8 @@ def main():
     ok = [r for r in results if r["status"] == "OK"]
     if ok:
         avg_time = sum(float(r["time"].rstrip("s")) for r in ok) / len(ok)
-        print(f"Average time: {avg_time:.1f}s")
+        times = [float(r["time"].rstrip("s")) for r in ok]
+        print(f"Avg time: {avg_time:.1f}s (min: {min(times):.1f}s, max: {max(times):.1f}s)")
 
     # Grade distribution
     print(f"\nGrade distribution:")
@@ -143,12 +182,20 @@ def main():
     matches = 0
     total = 0
     for r in results:
-        if r["deepseek"] != "N/A" and r["status"] == "OK":
+        if r["status"] == "OK":
             total += 1
             if r["grade"] == r["deepseek"]:
                 matches += 1
     if total > 0:
         print(f"  Matches: {matches}/{total} ({matches/total*100:.1f}%)")
+
+    # Per-task breakdown
+    print(f"\nPer-task breakdown:")
+    tasks = set(r["task"] for r in results)
+    for task in sorted(tasks):
+        task_results = [r for r in results if r["task"] == task and r["status"] == "OK"]
+        task_matches = sum(1 for r in task_results if r["grade"] == r["deepseek"])
+        print(f"  {task}: {task_matches}/{len(task_results)} ({task_matches/len(task_results)*100:.1f}%)")
 
     db.close()
 
