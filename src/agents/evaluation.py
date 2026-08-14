@@ -3,7 +3,8 @@ import json
 from typing import Optional
 from src.llm import LLMClient
 from src.models import Evaluation, ExerciseIssue, Grade
-from src.utils.notebook import clean_notebook, classify_task
+from src.utils.notebook import clean_notebook
+from src.utils.task_classifier import classify_task
 from src.utils.rubrics import load_rubric_from_file
 from src.utils.code_analysis import analyze_code, format_metrics_for_llm
 from src.utils.reference import format_reference_for_prompt

@@ -1,0 +1,17 @@
+services:
+  evaluator:
+    build: .
+    container_name: the-evaluator
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+      - ./rubrics:/app/rubrics
+      - ./src:/app/src
+      - ./apps:/app/apps
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - EVALUATOR_DATABASE_PATH=data/evaluations.db
+      - EVALUATOR_RUBRICS_DIR=rubrics
+    restart: unless-stopped

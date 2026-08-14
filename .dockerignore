@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.gitignore
+*.db
+data/
+Past Bootcamps/
+tests/
+archive/
+batch_test_results/
+n8n/
+docs/
+opencode.json
+AGENTS.md
+*.md
+!.gitkeep

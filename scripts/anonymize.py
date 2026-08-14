@@ -37,29 +37,46 @@ ANONYM_MAP = {
 }
 
 # Suffixes to strip (leftover surname fragments)
-STRIP_SUFFIXES = [" Villalobos", " Millón", " Prieto", "Aranguren", " Baque", " Goffard"]
+STRIP_SUFFIXES = [" Villalobos", " Millón", " Prieto", " Aranguren", " Baque", " Goffard"]
 
 
 def anonymize_name(name: str) -> str:
     """Replace real name with anonymized version, stripping leftover surnames."""
-    for real, fake in ANONYM_MAP.items():
-        if name.startswith(real):
-            result = fake
-            remainder = name[len(real):]
-            # Strip known surname fragments
-            for suffix in STRIP_SUFFIXES:
-                remainder = remainder.replace(suffix, "")
-            # Keep only _ID suffix if present
-            if remainder:
-                result = f"{fake}{remainder}"
-            return result
-    # Handle already-partially-anonymized names
+    # Handle already-anonymized names (strip leftover surnames)
     for prefix in ["Alumna", "Alumno"]:
         if name.startswith(prefix):
             result = name
             for suffix in STRIP_SUFFIXES:
                 result = result.replace(suffix, "")
+            result = result.replace("  ", " ").strip()
             return result
+
+    # Try exact match first, then partial (handle "Name ID" format)
+    for real, fake in ANONYM_MAP.items():
+        if name == real or name.startswith(real + "_") or name.startswith(real + " "):
+            result = fake
+            remainder = name[len(real):]
+            for suffix in STRIP_SUFFIXES:
+                remainder = remainder.replace(suffix, "")
+            # Clean up: remove leading space, collapse doubles
+            remainder = remainder.lstrip("_").lstrip()
+            if remainder and not remainder.startswith("_"):
+                remainder = "_" + remainder
+            result = f"{fake}{remainder}"
+            return result
+
+    # Fallback: check if name contains any known real name as substring
+    for real, fake in ANONYM_MAP.items():
+        if real in name:
+            result = fake
+            remainder = name.replace(real, "")
+            for suffix in STRIP_SUFFIXES:
+                remainder = remainder.replace(suffix, "")
+            remainder = remainder.strip("_").strip()
+            if remainder:
+                result = f"{fake}_{remainder}"
+            return result
+
     return name
 
 

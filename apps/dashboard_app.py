@@ -210,31 +210,29 @@ def render_evaluate_tab():
         uploaded_file = st.file_uploader("Sube un notebook (.ipynb)", type=["ipynb"])
 
         if uploaded_file is not None and student_name and st.button("🚀 Evaluar", type="primary"):
-            with tempfile.NamedTemporaryFile(suffix=".ipynb", delete=False, mode="wb") as tmp:
-                tmp.write(uploaded_file.getvalue())
-                tmp_path = tmp.name
+            with tempfile.TemporaryDirectory() as tmpdir:
+                tmp_path = Path(tmpdir) / uploaded_file.name
+                tmp_path.write_bytes(uploaded_file.getvalue())
 
-            with st.spinner("Evaluando..."):
-                try:
-                    llm = LLMClient(config.llm)
-                    orchestrator = Orchestrator(db, llm, config.paths.rubrics_dir)
-                    result = orchestrator.evaluate_local_notebook(
-                        student_name, tmp_path, task_key or None
-                    )
-                    st.success(f"✅ Evaluación completada")
+                with st.spinner("Evaluando..."):
+                    try:
+                        llm = LLMClient(config.llm)
+                        orchestrator = Orchestrator(db, llm, config.paths.rubrics_dir)
+                        result = orchestrator.evaluate_local_notebook(
+                            student_name, str(tmp_path), task_key or None
+                        )
+                        st.success(f"✅ Evaluación completada")
 
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.write(f"**Calificación:** {result.grade.value} ({result.numeric_grade}/10)")
-                    with col2:
-                        st.write(f"**Tarea:** {result.topic_key or 'auto'}")
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.write(f"**Calificación:** {result.grade.value} ({result.numeric_grade}/10)")
+                        with col2:
+                            st.write(f"**Tarea:** {result.topic_key or 'auto'}")
 
-                    st.subheader("Informe")
-                    st.markdown(result.markdown_report)
-                except Exception as e:
-                    st.error(f"❌ Error: {e}")
-                finally:
-                    Path(tmp_path).unlink(missing_ok=True)
+                        st.subheader("Informe")
+                        st.markdown(result.markdown_report)
+                    except Exception as e:
+                        st.error(f"❌ Error: {e}")
 
 
 def render_evaluations_tab():

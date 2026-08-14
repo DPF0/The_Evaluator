@@ -70,6 +70,7 @@ class Database:
                 numeric_grade INTEGER NOT NULL,
                 markdown_report TEXT NOT NULL,
                 unresolved_exercises INTEGER DEFAULT 0,
+                topic_key TEXT,
                 override_reason TEXT,
                 override_at TEXT,
                 evaluated_at TEXT DEFAULT (datetime('now')),
@@ -172,12 +173,12 @@ class Database:
         cursor = self.conn.execute(
             """INSERT INTO evaluations
                (student_id, assignment_id, filename, grade, numeric_grade,
-                markdown_report, unresolved_exercises, evaluated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                markdown_report, unresolved_exercises, topic_key, evaluated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (evaluation.student_id, evaluation.assignment_id, evaluation.filename,
              evaluation.grade.value, evaluation.numeric_grade,
              evaluation.markdown_report, evaluation.unresolved_exercises,
-             evaluation.evaluated_at)
+             evaluation.topic_key, evaluation.evaluated_at)
         )
         eval_id = cursor.lastrowid
 
@@ -207,7 +208,7 @@ class Database:
     def get_student_evaluations(self, student_id: int) -> list[dict]:
         """Get all evaluations for a student."""
         rows = self.conn.execute(
-            """SELECT e.*, a.name as assignment_name, a.module, a.topic_key
+            """SELECT e.*, COALESCE(e.topic_key, a.topic_key) as topic_key, a.name as assignment_name, a.module
                FROM evaluations e
                JOIN assignments a ON e.assignment_id = a.id
                WHERE e.student_id = ?
@@ -237,7 +238,7 @@ class Database:
     def get_all_evaluations(self) -> list[dict]:
         """Get all evaluations."""
         rows = self.conn.execute(
-            """SELECT e.*, s.name as student_name, a.name as assignment_name
+            """SELECT e.*, COALESCE(e.topic_key, a.topic_key) as topic_key, s.name as student_name, a.name as assignment_name
                FROM evaluations e
                JOIN students s ON e.student_id = s.id
                JOIN assignments a ON e.assignment_id = a.id

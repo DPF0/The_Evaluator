@@ -6,7 +6,8 @@ from src.models import Student, Assignment, Evaluation, Rubric, Grade
 from src.agents.evaluation import EvaluationAgent
 from src.agents.rubric import RubricAgent
 from src.agents.report import ReportAgent
-from src.utils.notebook import download_notebook_from_github, clean_notebook, classify_task
+from src.utils.notebook import download_notebook_from_github, clean_notebook
+from src.utils.task_classifier import classify_task
 from src.utils.email import send_feedback_email
 
 
@@ -71,6 +72,7 @@ class Orchestrator:
         )
         evaluation.student_id = student_id
         evaluation.assignment_id = assignment_id
+        evaluation.topic_key = task_key
 
         # Save to database
         self.db.add_evaluation(evaluation)
@@ -134,6 +136,7 @@ class Orchestrator:
         )
         evaluation.student_id = student_id
         evaluation.assignment_id = assignment_id
+        evaluation.topic_key = task_key
 
         # Save to database
         self.db.add_evaluation(evaluation)

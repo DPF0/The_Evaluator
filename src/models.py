@@ -52,6 +52,7 @@ class Evaluation:
     markdown_report: str
     unresolved_exercises: int = 0
     exercise_issues: list = field(default_factory=list)
+    topic_key: str = ""
     evaluated_at: str = field(default_factory=lambda: datetime.now().isoformat())
 
     @classmethod
