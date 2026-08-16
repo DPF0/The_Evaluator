@@ -52,6 +52,11 @@ def main():
             print("Database and rubrics initialized.")
 
         elif args.command == "evaluate":
+            reachable, detail = llm.health_check()
+            if not reachable:
+                print(f"Error: Cannot reach the LLM endpoint: {detail}")
+                print("Check base_url/model (env vars EVALUATOR_LLM_* or config.json).")
+                return
             if args.github:
                 result = orchestrator.evaluate_notebook(
                     args.student, args.file, args.github

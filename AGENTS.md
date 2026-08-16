@@ -30,8 +30,11 @@ apps/dashboard_app.py (Streamlit teacher dashboard)
 
 ## Critical Gotchas
 
-### All infrastructure is hardcoded to 192.168.0.37
-No env vars, no config files. The LLM server (`:8083`), and test ports (`:8084`, `:8085`) are hardcoded as string literals.
+### LLM endpoints default to the dev LAN, but are configurable
+`config.py` defaults to `http://192.168.0.37:8084/v1` (private LAN, unreachable off the dev network).
+Override with `EVALUATOR_`-prefixed env vars or `config.json` (the dashboard's ⚙️ Configuración tab writes
+`config.json`). The CLI `evaluate` and both dashboard evaluation flows run a short `LLMClient.health_check()`
+preflight and fail fast with a clear error if the endpoint is unreachable (instead of hanging for the 300s chat timeout).
 
 ### CUDA0 is the user's main server — never touch it
 Qwen3.6-27B runs on CUDA0:8083 with speculative decoding. Only use CUDA1 and CUDA2 for testing.
@@ -44,7 +47,7 @@ Clears outputs via nbformat, keeps all code/markdown intact. No character limits
 
 ### LLM client params differ from server params
 - **Client**: `temperature=0.2`, `top_p=0.5`, `top_k=10`, `seed=42`, `max_tokens=8000`
-- **Server**: `--temp 0.6`, `--top-p 0.95`, `--top-k 64`, `--ctx-size 32000`, `-fa on`, `--cache-type-k q4_0`, `--cache-type-v q4_0`, `--n-gpu-layers 99`, `--parallel 3`
+- **Server** (Gemma test, `:8084`): `--temp 0.6`, `--top-p 0.95`, `--top-k 64`, `--ctx-size 128000`, `-fa on`, `--cache-type-k q8_0`, `--cache-type-v q5_1`, `--parallel 5`, `--jinja`, `-kvu`
 
 ### Grade extraction regex
 Matches `calificación global` section in LLM output. Deepseek uses English grades (Good/Regular/Bad) → mapped to Spanish (Bien/Regular/Mal).
@@ -60,6 +63,11 @@ No ruff, black, or mypy.
 - Run: `./.venv/bin/pytest tests/test_core.py -v` (dev venv in `.venv`, already gitignored)
 - Install dev deps: `python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt -r requirements-dev.txt`
 - The benchmark runner `tests/run_test.py` is a standalone script (separate concern: LLM model benchmarks).
+
+## Known Limitations
+- `Database.close()` only closes the calling thread's connection (plus the main one). Per-thread connections from other threads leak until process exit — harmless in practice (SQLite + OS reclaim), but not a clean multi-thread shutdown.
+- The dashboard re-extracts the uploaded ZIP into a temp dir on every Streamlit rerun (minor I/O, not cached).
+- `download_notebook_from_github` assumes the `main` branch when building the raw URL.
 
 ## Commands
 

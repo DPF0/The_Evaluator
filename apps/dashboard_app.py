@@ -164,6 +164,13 @@ def render_evaluate_tab():
 
                 if st.button("🚀 Evaluar lote", type="primary"):
                     llm = LLMClient(config.llm)
+                    ok, detail = llm.health_check()
+                    if not ok:
+                        st.error(
+                            f"❌ No se pudo conectar con el endpoint LLM: {detail}\n\n"
+                            "Revisa la URL y el modelo en ⚙️ Configuración, guarda e inténtalo de nuevo."
+                        )
+                        return
                     orchestrator = Orchestrator(db, llm, config.paths.rubrics_dir)
 
                     max_workers = 5
@@ -235,6 +242,12 @@ def render_evaluate_tab():
                 with st.spinner("Evaluando..."):
                     try:
                         llm = LLMClient(config.llm)
+                        ok, detail = llm.health_check()
+                        if not ok:
+                            raise ConnectionError(
+                                f"No se pudo conectar con el endpoint LLM: {detail}. "
+                                "Revisa la URL y el modelo en ⚙️ Configuración."
+                            )
                         orchestrator = Orchestrator(db, llm, config.paths.rubrics_dir)
                         result = orchestrator.evaluate_local_notebook(
                             student_name, str(tmp_path), task_key or None

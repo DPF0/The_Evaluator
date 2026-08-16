@@ -57,8 +57,10 @@ apps/dashboard_app.py (Streamlit teacher dashboard)
 ## Requirements
 
 - Python 3.10+
-- Local LLM server (OpenAI-compatible API on `http://192.168.0.37:8084/v1`)
-- Dependencies: `streamlit`, `requests`, `nbformat`, `openai`
+- An LLM backend exposing an OpenAI-compatible API. The default points at a local llama.cpp
+  server (`http://192.168.0.37:8084/v1`), but any endpoint works — configure it via `EVALUATOR_LLM_*`
+  env vars, a `config.json`, or the dashboard's ⚙️ Configuración tab.
+- Dependencies: `streamlit`, `requests`, `nbformat`, `pandas` (see `requirements.txt`)
 
 ## Usage
 

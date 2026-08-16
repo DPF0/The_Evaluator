@@ -65,6 +65,35 @@ class LLMClient:
                 time.sleep(RETRY_BACKOFF_SECONDS * attempt)
         raise last_error
 
+    def health_check(self, timeout: float = 8.0) -> tuple[bool, str]:
+        """Quick reachability check against the LLM endpoint.
+
+        Issues a short-timeout request to the OpenAI-compatible /models
+        endpoint and reports the result without raising. Lets callers fail
+        fast with a clear message instead of hanging for the full chat
+        timeout (chat uses a 300s timeout with retries).
+
+        Args:
+            timeout: Seconds before giving up on the probe.
+
+        Returns:
+            Tuple of (ok, detail) describing the endpoint status.
+        """
+        import requests
+
+        url = self.config.base_url.rstrip("/")
+        if url and not url.endswith("/v1"):
+            url = f"{url}/v1"
+        try:
+            resp = requests.get(f"{url}/models", timeout=timeout)
+            if resp.status_code < 400:
+                return True, f"OK (HTTP {resp.status_code})"
+            return False, f"HTTP {resp.status_code}: {resp.text[:120]}"
+        except requests.RequestException as e:
+            return False, f"{type(e).__name__}: {e}"
+        except Exception as e:
+            return False, str(e)
+
     def chat_structured(self, messages: list[dict], schema: dict,
                         system_prompt: Optional[str] = None) -> dict:
         """Send chat messages and parse response as structured JSON."""
