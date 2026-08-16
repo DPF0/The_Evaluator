@@ -45,8 +45,8 @@ class Orchestrator:
         notebook_json = download_notebook_from_github(github_url, filename)
 
         # Classify task
-        cleaned_text = str(notebook_json)  # Temporary, will use clean_notebook
-        task_key = classify_task(cleaned_text)
+        cleaned_text = clean_notebook(notebook_json)
+        task_key = classify_task(cleaned_text, filename)
 
         # Get assignment
         assignment = self.db.get_assignment(task_key)
