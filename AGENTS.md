@@ -49,8 +49,8 @@ Clears outputs via nbformat, keeps all code/markdown intact. No character limits
 ### Grade extraction regex
 Matches `calificación global` section in LLM output. Deepseek uses English grades (Good/Regular/Bad) → mapped to Spanish (Bien/Regular/Mal).
 
-### No package management
-No `requirements.txt`, `pyproject.toml`, or `setup.py`. Dependencies (`streamlit`, `requests`, `nbformat`) are assumed installed.
+### Package management is minimal
+`requirements.txt` (requests, streamlit, nbformat, pandas) — used by `Dockerfile` (`COPY requirements.txt`) and by Render. No pyproject.toml or setup.py.
 
 ### No linting, formatting, or test framework
 No ruff, black, mypy, or pytest. Tests are standalone scripts in `tests/`.
@@ -125,6 +125,10 @@ LLM params: `temperature=0.2`, `top_p=0.5`, `top_k=10`, `seed=42`, `max_tokens=8
 | `rubrics/rubric_numpy_ii.md` | NumPy II rubric |
 | `docs/llm_benchmark_results.md` | Benchmark documentation |
 | `archive/` | Deprecated files (old grader_app.py, test_batch.py) |
+| `requirements.txt` | Python dependencies (used by Dockerfile and Render) |
+| `Dockerfile` | Container build (streamlit dashboard) |
+| `docker-compose.yml` | Local docker compose (app only, LLM external) |
+| `render.yaml` | Render deploy blueprint (free web tier, docker runtime) |
 
 ## Project Documentation
 

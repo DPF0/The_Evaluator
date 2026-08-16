@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: the-evaluator
+    runtime: docker
+    plan: free
+    dockerContext: .
+    dockerfilePath: /Dockerfile
+    healthCheckPath: /_stcore/health
+    autoDeploy: true
