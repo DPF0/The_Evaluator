@@ -21,12 +21,6 @@ def main():
     eval_parser.add_argument("--github", help="GitHub URL to folder")
     eval_parser.add_argument("--task", help="Task key (e.g., numpy_i)")
 
-    # Batch evaluate
-    batch_parser = subparsers.add_parser("batch", help="Batch evaluate notebooks")
-    batch_parser.add_argument("--dir", required=True, help="Directory with notebooks")
-    batch_parser.add_argument("--task", required=True, help="Task key")
-    batch_parser.add_argument("--students", help="CSV file with student names")
-
     # Generate report
     report_parser = subparsers.add_parser("report", help="Generate feedback report")
     report_parser.add_argument("--student", help="Student ID or name")
@@ -89,9 +83,6 @@ def main():
                 )
                 db.add_rubric(rubric)
                 print(f"Rubric generated for {rubric.topic_key}")
-
-        elif args.command == "batch":
-            print("Batch evaluation not yet implemented.")
 
     finally:
         db.close()

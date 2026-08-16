@@ -249,19 +249,20 @@ class Database:
     def update_evaluation_grade(self, eval_id: int, new_grade: str,
                                  reason: Optional[str] = None) -> bool:
         """Update evaluation grade with override reason."""
-        from datetime import datetime
-        grade_map = {"Mal": 3, "Regular": 5, "Bien": 7, "Excepcional": 9}
-        numeric = grade_map.get(new_grade, 5)
-        self.conn.execute(
+        try:
+            numeric = Grade(new_grade).numeric
+        except ValueError:
+            numeric = Grade.REGULAR.numeric
+        cursor = self.conn.execute(
             """UPDATE evaluations
-               SET grade = ?, numeric_grade = ?,
-                   override_reason = ?,
-                   override_at = datetime('now')
-               WHERE id = ?""",
+                SET grade = ?, numeric_grade = ?,
+                    override_reason = ?,
+                    override_at = datetime('now')
+                WHERE id = ?""",
             (new_grade, numeric, reason, eval_id)
         )
         self.conn.commit()
-        return self.conn.rowsaffected > 0
+        return cursor.rowcount > 0
 
     # Rubric operations
     def add_rubric(self, rubric: Rubric) -> int:

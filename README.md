@@ -68,14 +68,17 @@ apps/dashboard_app.py (Streamlit teacher dashboard)
 # Initialize database and load rubrics
 python3 main.py setup
 
-# Evaluate a single notebook
-python3 main.py evaluate --student "Student Name" --notebook "path/to/notebook.ipynb"
+# Evaluate a single notebook (auto-detects topic)
+python3 main.py evaluate --student "Student Name" --file "path/to/notebook.ipynb" --task numpy_i
+
+# Evaluate a notebook from a GitHub folder
+python3 main.py evaluate --student "Student Name" --file "notebook.ipynb" --github "https://github.com/org/repo/tree/main/folder"
 
 # Generate Markdown feedback report
 python3 main.py report --student "Student Name"
 
-# Generate rubric from reference notebook
-python3 main.py rubric --topic "topic" --reference "path/to/reference.ipynb"
+# Generate a rubric for a topic
+python3 main.py rubric --generate "NumPy I" --topic numpy_i --description "Fundamentos de NumPy"
 ```
 
 ### Teacher Dashboard

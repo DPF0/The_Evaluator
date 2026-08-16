@@ -55,29 +55,6 @@ class Evaluation:
     topic_key: str = ""
     evaluated_at: str = field(default_factory=lambda: datetime.now().isoformat())
 
-    @classmethod
-    def from_llm_response(cls, student_id: int, assignment_id: int,
-                          filename: str, raw_text: str) -> "Evaluation":
-        """Parse LLM response into structured evaluation."""
-        import re
-        grade_text = "Regular"
-        match = re.match(
-            r"(?:Calificación Global|Nota)[:\s]*\**\**?(Mal|Regular|Bien|Excepcional)",
-            raw_text, flags=re.I
-        )
-        if match:
-            grade_text = match[1]
-
-        grade = Grade(grade_text)
-        return cls(
-            student_id=student_id,
-            assignment_id=assignment_id,
-            filename=filename,
-            grade=grade,
-            numeric_grade=grade.numeric,
-            markdown_report=raw_text,
-        )
-
 
 @dataclass
 class Rubric:

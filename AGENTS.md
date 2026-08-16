@@ -66,9 +66,10 @@ No ruff, black, or mypy.
 | Command | Purpose |
 |---------|---------|
 | `python3 main.py setup` | Initialize database and load rubrics |
-| `python3 main.py evaluate --student <name> --notebook <path>` | Grade a single notebook |
+| `python3 main.py evaluate --student <name> --file <path> [--task <key>]` | Grade a single local notebook |
+| `python3 main.py evaluate --student <name> --file <nb> --github <url>` | Grade a notebook from a GitHub folder |
 | `python3 main.py report --student <name>` | Generate Markdown feedback report |
-| `python3 main.py rubric --topic <topic> --reference <path>` | Generate rubric from reference notebook |
+| `python3 main.py rubric --generate <name> --topic <key> --description <desc>` | Generate rubric for a topic |
 | `streamlit run apps/dashboard_app.py` | Launch teacher dashboard |
 | `python3 tests/run_test.py --model <config>` | Run benchmark test (31 notebooks) |
 | `./.venv/bin/pytest tests/test_core.py -v` | Run core regression tests (no LLM needed) |

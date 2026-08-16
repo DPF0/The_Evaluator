@@ -21,18 +21,9 @@ class Orchestrator:
         self.rubric_agent = RubricAgent(llm, rubrics_dir)
         self.report_agent = ReportAgent(llm)
 
-    def evaluate_notebook(self, student_name: str, filename: str,
-                          github_url: str) -> Evaluation:
-        """Evaluate a single notebook.
-
-        Args:
-            student_name: Student name.
-            filename: Notebook filename.
-            github_url: GitHub URL to the folder containing the notebook.
-
-        Returns:
-            Evaluation object.
-        """
+    def _run_pipeline(self, student_name: str, notebook_json: dict,
+                      filename: str, task_key: str) -> Evaluation:
+        """Shared evaluation pipeline: student -> assignment -> rubric -> evaluate -> save."""
         # Get or create student
         student = self.db.get_student(student_name)
         if not student:
@@ -41,14 +32,7 @@ class Orchestrator:
         else:
             student_id = student["id"]
 
-        # Download notebook
-        notebook_json = download_notebook_from_github(github_url, filename)
-
-        # Classify task
-        cleaned_text = clean_notebook(notebook_json)
-        task_key = classify_task(cleaned_text, filename)
-
-        # Get assignment
+        # Get or create assignment
         assignment = self.db.get_assignment(task_key)
         if not assignment:
             parts = task_key.split("_")
@@ -78,8 +62,25 @@ class Orchestrator:
         self.db.add_evaluation(evaluation)
         return evaluation
 
+    def evaluate_notebook(self, student_name: str, filename: str,
+                           github_url: str) -> Evaluation:
+        """Evaluate a single notebook downloaded from GitHub.
+
+        Args:
+            student_name: Student name.
+            filename: Notebook filename.
+            github_url: GitHub URL to the folder containing the notebook.
+
+        Returns:
+            Evaluation object.
+        """
+        notebook_json = download_notebook_from_github(github_url, filename)
+        cleaned_text = clean_notebook(notebook_json)
+        task_key = classify_task(cleaned_text, filename)
+        return self._run_pipeline(student_name, notebook_json, filename, task_key)
+
     def evaluate_local_notebook(self, student_name: str, filepath: str,
-                                 task_key: Optional[str] = None) -> Evaluation:
+                                  task_key: Optional[str] = None) -> Evaluation:
         """Evaluate a notebook from local file.
 
         Args:
@@ -93,15 +94,6 @@ class Orchestrator:
         import json
         from pathlib import Path
 
-        # Get or create student
-        student = self.db.get_student(student_name)
-        if not student:
-            student_id = self.db.add_student(Student(name=student_name))
-            student = self.db.get_student(student_name)
-        else:
-            student_id = student["id"]
-
-        # Load notebook
         with open(filepath) as f:
             notebook_json = json.load(f)
 
@@ -112,35 +104,7 @@ class Orchestrator:
             cleaned = clean_notebook(notebook_json)
             task_key = classify_task(cleaned, filename)
 
-        # Get assignment
-        assignment = self.db.get_assignment(task_key)
-        if not assignment:
-            parts = task_key.split("_")
-            roman = {"i": "I", "ii": "II", "iii": "III"}
-            assign_name = " ".join(roman.get(p.lower(), p.capitalize()) for p in parts)
-            assignment_id = self.db.add_assignment(Assignment(
-                name=assign_name,
-                module=task_key,
-                topic_key=task_key,
-            ))
-        else:
-            assignment_id = assignment["id"]
-
-        # Get rubric
-        rubric_content = self.rubric_agent.get_rubric(task_key)
-
-        # Evaluate (with reference metadata)
-        evaluation = self.eval_agent.evaluate(
-            notebook_json, student_name, filename, rubric_content,
-            topic_key=task_key
-        )
-        evaluation.student_id = student_id
-        evaluation.assignment_id = assignment_id
-        evaluation.topic_key = task_key
-
-        # Save to database
-        self.db.add_evaluation(evaluation)
-        return evaluation
+        return self._run_pipeline(student_name, notebook_json, filename, task_key)
 
     def generate_student_feedback(self, student_id: int) -> str:
         """Generate feedback report for a student.
