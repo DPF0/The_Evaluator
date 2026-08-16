@@ -2,8 +2,12 @@
 import json
 import re
 import threading
+import time
 from typing import Optional
 from src.config import LLMConfig
+
+MAX_RETRIES = 3
+RETRY_BACKOFF_SECONDS = 2.0
 
 
 class LLMClient:
@@ -13,8 +17,13 @@ class LLMClient:
         self.config = config
 
     def chat(self, messages: list[dict], system_prompt: Optional[str] = None) -> str:
-        """Send chat messages to LLM and return response text."""
+        """Send chat messages to LLM and return response text.
+
+        Retries transient failures (connection errors, timeouts, 5xx) up to
+        MAX_RETRIES times with linear backoff. 4xx errors are not retried.
+        """
         import requests
+
         if system_prompt:
             messages = [{"role": "system", "content": system_prompt}] + messages
 
@@ -33,15 +42,28 @@ class LLMClient:
         if self.config.api_key:
             headers["Authorization"] = f"Bearer {self.config.api_key}"
 
-        resp = requests.post(
-            f"{self.config.base_url}/chat/completions",
-            json=payload,
-            headers=headers,
-            timeout=300,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        return data["choices"][0]["message"]["content"]
+        last_error = None
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                resp = requests.post(
+                    f"{self.config.base_url}/chat/completions",
+                    json=payload,
+                    headers=headers,
+                    timeout=300,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                return data["choices"][0]["message"]["content"]
+            except requests.HTTPError as e:
+                status = e.response.status_code if e.response is not None else None
+                if status is not None and 400 <= status < 500:
+                    raise
+                last_error = e
+            except (requests.ConnectionError, requests.Timeout) as e:
+                last_error = e
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_BACKOFF_SECONDS * attempt)
+        raise last_error
 
     def chat_structured(self, messages: list[dict], schema: dict,
                         system_prompt: Optional[str] = None) -> dict:

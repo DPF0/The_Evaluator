@@ -52,8 +52,14 @@ Matches `calificación global` section in LLM output. Deepseek uses English grad
 ### Package management is minimal
 `requirements.txt` (requests, streamlit, nbformat, pandas) — used by `Dockerfile` (`COPY requirements.txt`) and by Render. No pyproject.toml or setup.py.
 
-### No linting, formatting, or test framework
-No ruff, black, mypy, or pytest. Tests are standalone scripts in `tests/`.
+### Linting / formatting
+No ruff, black, or mypy.
+
+### Test framework: pytest
+- **Core regression suite**: `tests/test_core.py` (no LLM/network needed). Covers task classification over all 31 test-set notebooks, targeted classifier edge cases, notebook cleaning, grade extraction, and LLM client retry logic (mocked HTTP).
+- Run: `./.venv/bin/pytest tests/test_core.py -v` (dev venv in `.venv`, already gitignored)
+- Install dev deps: `python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt -r requirements-dev.txt`
+- The benchmark runner `tests/run_test.py` is a standalone script (separate concern: LLM model benchmarks).
 
 ## Commands
 
@@ -65,6 +71,7 @@ No ruff, black, mypy, or pytest. Tests are standalone scripts in `tests/`.
 | `python3 main.py rubric --topic <topic> --reference <path>` | Generate rubric from reference notebook |
 | `streamlit run apps/dashboard_app.py` | Launch teacher dashboard |
 | `python3 tests/run_test.py --model <config>` | Run benchmark test (31 notebooks) |
+| `./.venv/bin/pytest tests/test_core.py -v` | Run core regression tests (no LLM needed) |
 
 ## Testing Infrastructure
 
@@ -117,7 +124,8 @@ LLM params: `temperature=0.2`, `top_p=0.5`, `top_k=10`, `seed=42`, `max_tokens=8
 | `src/utils/reference.py` | Reference notebook analysis |
 | `src/utils/code_analysis.py` | AST-based static analysis |
 | `apps/dashboard_app.py` | Streamlit teacher dashboard |
-| `tests/run_test.py` | Structured test runner |
+| `tests/run_test.py` | Structured test runner (LLM benchmark) |
+| `tests/test_core.py` | Core regression suite (pytest, no LLM needed) |
 | `tests/test_set.csv` | Fixed test set (31 notebooks) |
 | `tests/models/*.conf` | Model server configurations |
 | `tests/results/runs.json` | Registered test results |
@@ -126,6 +134,7 @@ LLM params: `temperature=0.2`, `top_p=0.5`, `top_k=10`, `seed=42`, `max_tokens=8
 | `docs/llm_benchmark_results.md` | Benchmark documentation |
 | `archive/` | Deprecated files (old grader_app.py, test_batch.py) |
 | `requirements.txt` | Python dependencies (used by Dockerfile and Render) |
+| `requirements-dev.txt` | Dev dependencies (pytest) for the core test suite |
 | `Dockerfile` | Container build (streamlit dashboard) |
 | `docker-compose.yml` | Local docker compose (app only, LLM external) |
 | `render.yaml` | Render deploy blueprint (free web tier, docker runtime) |
