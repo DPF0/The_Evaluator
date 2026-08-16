@@ -132,4 +132,5 @@ LLM params: `temperature=0.2`, `top_p=0.5`, `top_k=10`, `seed=42`, `max_tokens=8
 
 ## Project Documentation
 
-`docs/llm_benchmark_results.md` — Benchmark results, test procedure, model comparison.
+- `docs/llm_benchmark_results.md` — Benchmark results, test procedure, model comparison.
+- `docs/despliegue.md` — Deployment doc (Modulo 3.1): options chosen, Render deploy, bring-your-own-LLM design.
