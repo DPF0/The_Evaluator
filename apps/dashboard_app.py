@@ -6,6 +6,7 @@ import requests
 import streamlit as st
 import pandas as pd
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -165,33 +166,50 @@ def render_evaluate_tab():
                     llm = LLMClient(config.llm)
                     orchestrator = Orchestrator(db, llm, config.paths.rubrics_dir)
 
+                    max_workers = 5
                     results = []
-                    progress = st.progress(0)
+                    completed = 0
+                    progress = st.progress(0, text="Iniciando...")
                     status = st.empty()
 
-                    for i, (student_name, filepath, _) in enumerate(notebooks, 1):
-                        status.text(f"Evaluando {i}/{len(notebooks)}: {student_name} — {Path(filepath).name}")
+                    def evaluate_one(student_name, filepath):
                         try:
                             result = orchestrator.evaluate_local_notebook(
                                 student_name, filepath, task_key or None
                             )
-                            results.append({
+                            return {
                                 "student": student_name,
                                 "file": Path(filepath).name,
                                 "grade": result.grade.value,
                                 "numeric": result.numeric_grade,
                                 "error": None,
-                            })
+                            }
                         except Exception as e:
-                            results.append({
+                            return {
                                 "student": student_name,
                                 "file": Path(filepath).name,
                                 "grade": "ERROR",
                                 "numeric": 0,
                                 "error": str(e)[:100],
-                            })
-                        progress.progress(i / len(notebooks))
+                            }
 
+                    notebook_order = {Path(fp).name: i for i, (_, fp, _) in enumerate(notebooks)}
+
+                    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                        futures = {
+                            executor.submit(evaluate_one, student_name, filepath): (student_name, filepath)
+                            for student_name, filepath, _ in notebooks
+                        }
+
+                        for future in as_completed(futures):
+                            student_name, filepath = futures[future]
+                            results.append(future.result())
+                            completed += 1
+                            progress.progress(completed / len(notebooks),
+                                              text=f"{completed}/{len(notebooks)} completados")
+                            status.text(f"✅ {completed}/{len(notebooks)} — último: {student_name} / {Path(filepath).name}")
+
+                    results.sort(key=lambda r: notebook_order.get(r["file"], 999))
                     status.text("✅ Lote completado")
                     st.dataframe(pd.DataFrame(results), use_container_width=True)
 
