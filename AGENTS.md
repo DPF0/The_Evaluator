@@ -6,6 +6,15 @@ AI-powered auto-grader for Jupyter notebook assignments in a Data Science bootca
 
 Repo: https://github.com/DPF0/The_Evaluator
 
+## Branching & Releases
+
+- **`main`** = stable, release-only. Reviewers and Render (autoDeploy) track `main`.
+- **`dev`** = integration branch. All new work lands here first; small feature
+  branches off `dev` are optional for isolated work.
+- **Never develop directly on `main`** — no commits/pushes to `main` except release merges.
+- **Release process**: merge `dev` → `main`, tag `vMAJOR.MINOR.PATCH` (annotated),
+  push branch + tag. Releases live at 0.x (pre-1.0 MVP). Current: `v0.1.0`.
+
 ## Architecture
 
 ```
