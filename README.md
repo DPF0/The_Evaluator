@@ -98,11 +98,12 @@ python3 tests/run_test.py --model gemma_4_12b_q4k_inst1
 
 ## Configuration
 
-Edit `src/config.py` to adjust:
-- LLM endpoint and parameters
-- Database path
-- Rubric directory
-- Paths
+Settings are loaded with priority **env vars > `config.json` > defaults**:
+
+- **Env vars** (prefix `EVALUATOR_`): e.g. `EVALUATOR_LLM_BASE_URL`, `EVALUATOR_LLM_MODEL`,
+  `EVALUATOR_LLM_API_KEY`, `EVALUATOR_LLM_TEMPERATURE`, `EVALUATOR_DATABASE_PATH`, `EVALUATOR_RUBRICS_DIR`
+- **`config.json`** in the working directory (also written by the dashboard's ⚙️ Configuración tab)
+- **Defaults** live in `src/config.py` (local llama.cpp endpoint, `data/evaluations.db`, `rubrics/`)
 
 ## Benchmark Results
 
