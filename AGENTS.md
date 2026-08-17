@@ -45,8 +45,10 @@ Override with `EVALUATOR_`-prefixed env vars or `config.json` (the dashboard's �
 `config.json`). The CLI `evaluate` and both dashboard evaluation flows run a short `LLMClient.health_check()`
 preflight and fail fast with a clear error if the endpoint is unreachable (instead of hanging for the 300s chat timeout).
 
-### CUDA0 is the user's main server — never touch it
-Qwen3.6-27B runs on CUDA0:8083 with speculative decoding. Only use CUDA1 and CUDA2 for testing.
+### CUDA0 and CUDA1 are reserved — only CUDA2 is free
+CUDA0 hosts the user's main server (`:8083`); CUDA1 is also reserved.
+Never start, stop, or modify anything on CUDA0 or CUDA1.
+Any model we serve (tests, benchmarks, experiments) runs on CUDA2 only.
 
 ### Task classification is filename-based
 `numpy_i` if filename contains `numpy_i` or `numpy1`. `numpy_ii` if `numpy_ii` or `numpy2`. Content-based classification was unreliable.
@@ -102,6 +104,10 @@ No ruff, black, or mypy.
 - Location: `tests/models/*.conf`
 - Dual-instance models (8084+8085): `ThreadPoolExecutor(2)` concurrent evaluation
 - Split models (CUDA1,CUDA2): sequential evaluation
+- Note: many `.conf` files still reference CUDA1 (now reserved — see gotchas).
+  Those configs are not runnable until rewritten for CUDA2-only (models that need
+  2 cards or >12GB simply won't fit). Historical results in `docs/llm_benchmark_results.md`
+  and `tests/results/runs.json` remain valid records of what was run.
 
 ### Results
 - Location: `tests/results/runs.json`
