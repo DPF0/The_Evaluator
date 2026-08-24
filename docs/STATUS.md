@@ -46,8 +46,17 @@ apps/dashboard_app.py (Streamlit teacher dashboard, parallel batch evaluation)
 | LLM evaluation | ✅ Reference-aware, retry on transient errors, health check |
 | Teacher dashboard | ✅ Parallel batch (5 workers), grade override, config tab |
 | Grade scale | ✅ Mal 3 / Regular 5 / Bien 7 / Excepcional 9 |
-| Deployment | ✅ Render blueprint + bring-your-own-LLM (`docs/despliegue.md`) |
+| Deployment | ✅ Live on Render (free tier): `https://the-evaluator.onrender.com` — blueprint + bring-your-own-LLM (`docs/despliegue.md`) |
 | Email delivery | ⏳ Code exists, not wired to the UI |
+
+## Milestones
+
+| When | What |
+|------|------|
+| 2026-08-24 | **Modulo 3.1 delivered and graded 10.00/10.00** (I. Montalbán) — public deployment + BYO-LLM interface |
+| v0.1.0 | First stable release: grading pipeline, dashboard, tests, Render blueprint |
+| v0.1.1 | Config tab shows active configuration + unsaved-changes warning |
+| next (v0.2.0) | Post-MVP refinement analysis: `docs/analisis_arquitectura.md` (priorities P0: durable DB, auth, raw-response replay) |
 
 ## Testing
 
