@@ -28,6 +28,14 @@ def render_config_tab():
     st.header("⚙️ Configuración")
 
     config = get_config()
+    saved = Path("config.json").exists()
+    st.caption(
+        f"**Configuración activa** (la que usa la evaluación): `{config.llm.base_url}` · "
+        f"modelo `{config.llm.model}` · "
+        + ("API key definida · " if config.llm.api_key else "sin API key · ")
+        + ("origen: `config.json`" if saved
+           else "origen: **valores por defecto** — no hay config.json guardado")
+    )
 
     with st.expander("Backend LLM", expanded=True):
         col1, col2 = st.columns(2)
@@ -83,6 +91,13 @@ def render_config_tab():
         with col2:
             rubrics_dir = st.text_input("Directorio de rúbricas",
                                         value=config.paths.rubrics_dir, key="cfg_rubrics")
+
+    if (base_url != config.llm.base_url or model != config.llm.model
+            or (api_key or None) != config.llm.api_key or temperature != config.llm.temperature
+            or top_p != config.llm.top_p or int(top_k) != config.llm.top_k
+            or int(max_tokens) != int(config.llm.max_tokens)
+            or db_path != config.database.path or rubrics_dir != config.paths.rubrics_dir):
+        st.warning("⚠️ Cambios sin guardar — pulsa 💾 Guardar configuración para que la evaluación los use.")
 
     if st.button("💾 Guardar configuración", type="primary"):
         new_config = Config(
