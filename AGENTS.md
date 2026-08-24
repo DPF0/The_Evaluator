@@ -8,12 +8,15 @@ Repo: https://github.com/DPF0/The_Evaluator
 
 ## Branching & Releases
 
-- **`main`** = stable, release-only. Reviewers and Render (autoDeploy) track `main`.
+- **`main`** = stable, release-only. Reviewers and Render track `main`.
 - **`dev`** = integration branch. All new work lands here first; small feature
   branches off `dev` are optional for isolated work.
 - **Never develop directly on `main`** — no commits/pushes to `main` except release merges.
 - **Release process**: merge `dev` → `main`, tag `vMAJOR.MINOR.PATCH` (annotated),
-  push branch + tag. Releases live at 0.x (pre-1.0 MVP). Current: `v0.1.0`.
+  push branch + tag. Releases live at 0.x (pre-1.0 MVP). Current: `v0.1.1`.
+- **Render deploy**: `autoDeploy: true` is set in `render.yaml`, but it did NOT fire on the
+  v0.1.1 push — after every release, check the Render dashboard and manually trigger
+  "Deploy latest commit" if the build didn't start.
 
 ## Architecture
 
