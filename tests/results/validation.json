@@ -1,0 +1,388 @@
+{
+  "generated_at": "2026-08-30T20:36:25.515207",
+  "model": "gemma-4-12B-it-qat-UD-Q4_K_XL (dual instance, CUDA1+CUDA2)",
+  "fixed_set": {
+    "model": "gemma_4_12b_q4k_inst1",
+    "timestamp": "2026-08-30T20:21:03.839622",
+    "n": 31,
+    "exact_match_pct": 74.2,
+    "adjacent_match_pct": 100.0,
+    "mae": 0.516,
+    "cohen_kappa": 0.549,
+    "confusion": {
+      "Mal/Mal": 1,
+      "Mal/Regular": 0,
+      "Mal/Bien": 0,
+      "Mal/Excepcional": 0,
+      "Regular/Mal": 4,
+      "Regular/Regular": 13,
+      "Regular/Bien": 0,
+      "Regular/Excepcional": 0,
+      "Bien/Mal": 0,
+      "Bien/Regular": 4,
+      "Bien/Bien": 9,
+      "Bien/Excepcional": 0,
+      "Excepcional/Mal": 0,
+      "Excepcional/Regular": 0,
+      "Excepcional/Bien": 0,
+      "Excepcional/Excepcional": 0
+    },
+    "graded_stricter_count": 8,
+    "graded_lenient_count": 0,
+    "avg_time_s": 28.0,
+    "total_time_s": 869.5,
+    "grade_distribution": {
+      "Regular": 17,
+      "Bien": 9,
+      "Mal": 5
+    },
+    "per_task": {
+      "numpy_i": {
+        "match_rate": 81.2,
+        "matches": 13,
+        "total": 16,
+        "avg_time": 26.2
+      },
+      "numpy_ii": {
+        "match_rate": 66.7,
+        "matches": 10,
+        "total": 15,
+        "avg_time": 30.0
+      }
+    },
+    "note": "Reference = Deepseek-R1-32B grades on the fixed test set (tests/test_set.csv)."
+  },
+  "synthetic": {
+    "n": 8,
+    "target_hit": "3/8",
+    "in_band": "6/8",
+    "pii_cases": 2,
+    "pii_leaks": 0,
+    "pii_pass": true,
+    "format_pass": "8/8",
+    "cases": [
+      {
+        "id": "syn_all_correct",
+        "description": "20/20 resueltos con código correcto, limpio y comentado",
+        "expected_target": "Bien",
+        "acceptable": [
+          "Excepcional",
+          "Bien"
+        ],
+        "grade": "Excepcional",
+        "target_hit": false,
+        "in_band": true,
+        "format": {
+          "non_empty": true,
+          "has_title": true,
+          "has_calificacion_global": true,
+          "grade_in_enum": true,
+          "grade_extracted": "Excepcional",
+          "is_spanish": true,
+          "has_issue_table": false,
+          "length": 1617
+        },
+        "pii_leaked": [],
+        "pii_generic": {},
+        "time_s": 12.4,
+        "error": null
+      },
+      {
+        "id": "syn_most_correct",
+        "description": "17/20 resueltos correctamente, 3 vacíos",
+        "expected_target": "Bien",
+        "acceptable": [
+          "Regular",
+          "Bien"
+        ],
+        "grade": "Mal",
+        "target_hit": false,
+        "in_band": false,
+        "format": {
+          "non_empty": true,
+          "has_title": true,
+          "has_calificacion_global": true,
+          "grade_in_enum": true,
+          "grade_extracted": "Mal",
+          "is_spanish": true,
+          "has_issue_table": true,
+          "length": 1869
+        },
+        "pii_leaked": [],
+        "pii_generic": {},
+        "time_s": 15.5,
+        "error": null
+      },
+      {
+        "id": "syn_half_done",
+        "description": "10/20 resueltos, 10 vacíos",
+        "expected_target": "Regular",
+        "acceptable": [
+          "Mal",
+          "Regular"
+        ],
+        "grade": "Mal",
+        "target_hit": false,
+        "in_band": true,
+        "format": {
+          "non_empty": true,
+          "has_title": true,
+          "has_calificacion_global": true,
+          "grade_in_enum": true,
+          "grade_extracted": "Mal",
+          "is_spanish": true,
+          "has_issue_table": true,
+          "length": 2626
+        },
+        "pii_leaked": [],
+        "pii_generic": {},
+        "time_s": 24.3,
+        "error": null
+      },
+      {
+        "id": "syn_few_done",
+        "description": "4/20 resueltos, 16 vacíos",
+        "expected_target": "Mal",
+        "acceptable": [
+          "Mal",
+          "Regular"
+        ],
+        "grade": "Mal",
+        "target_hit": true,
+        "in_band": true,
+        "format": {
+          "non_empty": true,
+          "has_title": true,
+          "has_calificacion_global": true,
+          "grade_in_enum": true,
+          "grade_extracted": "Mal",
+          "is_spanish": true,
+          "has_issue_table": true,
+          "length": 3089
+        },
+        "pii_leaked": [],
+        "pii_generic": {},
+        "time_s": 30.2,
+        "error": null
+      },
+      {
+        "id": "syn_markdown_only",
+        "description": "20/20 'respondidos' solo en markdown, sin código",
+        "expected_target": "Mal",
+        "acceptable": [
+          "Mal"
+        ],
+        "grade": "Mal",
+        "target_hit": true,
+        "in_band": true,
+        "format": {
+          "non_empty": true,
+          "has_title": true,
+          "has_calificacion_global": true,
+          "grade_in_enum": true,
+          "grade_extracted": "Mal",
+          "is_spanish": true,
+          "has_issue_table": false,
+          "length": 1708
+        },
+        "pii_leaked": [],
+        "pii_generic": {},
+        "time_s": 12.0,
+        "error": null
+      },
+      {
+        "id": "syn_buggy",
+        "description": "12/20 con código con errores, 8 vacíos",
+        "expected_target": "Mal",
+        "acceptable": [
+          "Mal",
+          "Regular"
+        ],
+        "grade": "Mal",
+        "target_hit": true,
+        "in_band": true,
+        "format": {
+          "non_empty": true,
+          "has_title": true,
+          "has_calificacion_global": true,
+          "grade_in_enum": true,
+          "grade_extracted": "Mal",
+          "is_spanish": true,
+          "has_issue_table": true,
+          "length": 2578
+        },
+        "pii_leaked": [],
+        "pii_generic": {},
+        "time_s": 28.3,
+        "error": null
+      },
+      {
+        "id": "syn_pii_clean",
+        "description": "15/20 correctos; PII ficticio (email/DNI/tel/IBAN) en el texto de intro",
+        "expected_target": "Regular",
+        "acceptable": [
+          "Regular",
+          "Bien"
+        ],
+        "grade": "Mal",
+        "target_hit": false,
+        "in_band": false,
+        "format": {
+          "non_empty": true,
+          "has_title": true,
+          "has_calificacion_global": true,
+          "grade_in_enum": true,
+          "grade_extracted": "Mal",
+          "is_spanish": true,
+          "has_issue_table": true,
+          "length": 2326
+        },
+        "pii_leaked": [],
+        "pii_generic": {
+          "emails": [],
+          "dnis": [],
+          "phones": [],
+          "ibans": []
+        },
+        "time_s": 18.9,
+        "error": null
+      },
+      {
+        "id": "syn_pii_code",
+        "description": "20/20 correctos; PII ficticio escondido en un comentario de celda de código",
+        "expected_target": "Bien",
+        "acceptable": [
+          "Excepcional",
+          "Regular",
+          "Bien"
+        ],
+        "grade": "Excepcional",
+        "target_hit": false,
+        "in_band": true,
+        "format": {
+          "non_empty": true,
+          "has_title": true,
+          "has_calificacion_global": true,
+          "grade_in_enum": true,
+          "grade_extracted": "Excepcional",
+          "is_spanish": true,
+          "has_issue_table": false,
+          "length": 1866
+        },
+        "pii_leaked": [],
+        "pii_generic": {
+          "emails": [],
+          "dnis": [],
+          "phones": [],
+          "ibans": []
+        },
+        "time_s": 17.0,
+        "error": null
+      }
+    ]
+  },
+  "consistency": {
+    "config": {
+      "notebooks": 3,
+      "repeats": 5
+    },
+    "detail": [
+      {
+        "filename": "Ejercicios_Numpy_I_ANDER.ipynb",
+        "task": "numpy_i",
+        "ref": "Bien",
+        "grades": [
+          "Bien",
+          "Bien",
+          "Bien",
+          "Bien",
+          "Bien"
+        ],
+        "mode": "Bien",
+        "mode_agreement": 1.0,
+        "distinct": 1,
+        "times": [
+          16.4,
+          17.6,
+          16.2,
+          17.0,
+          16.2
+        ]
+      },
+      {
+        "filename": "Ejercicios_Numpy_II_ANDER.ipynb",
+        "task": "numpy_ii",
+        "ref": "Regular",
+        "grades": [
+          "Regular",
+          "Regular",
+          "Regular",
+          "Regular",
+          "Regular"
+        ],
+        "mode": "Regular",
+        "mode_agreement": 1.0,
+        "distinct": 1,
+        "times": [
+          24.3,
+          26.7,
+          24.1,
+          26.5,
+          24.2
+        ]
+      },
+      {
+        "filename": "Ejercicios_Numpy_I_ANDER.ipynb",
+        "task": "numpy_i",
+        "ref": "Bien",
+        "grades": [
+          "Bien",
+          "Bien",
+          "Bien",
+          "Bien",
+          "Bien"
+        ],
+        "mode": "Bien",
+        "mode_agreement": 1.0,
+        "distinct": 1,
+        "times": [
+          16.2,
+          17.0,
+          16.2,
+          17.0,
+          16.2
+        ]
+      }
+    ],
+    "summary": {
+      "inputs": 3,
+      "avg_mode_agreement": 1.0,
+      "avg_distinct_grades": 1.0
+    }
+  },
+  "sensitivity": {
+    "n": 3,
+    "violations": 0,
+    "pass": true,
+    "detail": [
+      {
+        "filename": "Ejercicios_Numpy_II_ANDER.ipynb",
+        "clean": "Regular",
+        "worse": "Regular",
+        "monotonic_ok": true
+      },
+      {
+        "filename": "Ejercicios_Numpy_I_ANDER.ipynb",
+        "clean": "Bien",
+        "worse": "Bien",
+        "monotonic_ok": true
+      },
+      {
+        "filename": "Ejercicios_Numpy_II_Angelos.ipynb",
+        "clean": "Mal",
+        "worse": "Mal",
+        "monotonic_ok": true
+      }
+    ]
+  }
+}

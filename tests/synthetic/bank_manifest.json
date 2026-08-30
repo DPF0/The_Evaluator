@@ -1,0 +1,116 @@
+[
+  {
+    "id": "syn_all_correct",
+    "task": "numpy_i",
+    "description": "20/20 resueltos con código correcto, limpio y comentado",
+    "expected": {
+      "target": "Bien",
+      "acceptable": [
+        "Bien",
+        "Excepcional"
+      ]
+    },
+    "pii_tokens": []
+  },
+  {
+    "id": "syn_most_correct",
+    "task": "numpy_i",
+    "description": "17/20 resueltos correctamente, 3 vacíos",
+    "expected": {
+      "target": "Bien",
+      "acceptable": [
+        "Bien",
+        "Regular"
+      ]
+    },
+    "pii_tokens": []
+  },
+  {
+    "id": "syn_half_done",
+    "task": "numpy_i",
+    "description": "10/20 resueltos, 10 vacíos",
+    "expected": {
+      "target": "Regular",
+      "acceptable": [
+        "Regular",
+        "Mal"
+      ]
+    },
+    "pii_tokens": []
+  },
+  {
+    "id": "syn_few_done",
+    "task": "numpy_i",
+    "description": "4/20 resueltos, 16 vacíos",
+    "expected": {
+      "target": "Mal",
+      "acceptable": [
+        "Regular",
+        "Mal"
+      ]
+    },
+    "pii_tokens": []
+  },
+  {
+    "id": "syn_markdown_only",
+    "task": "numpy_i",
+    "description": "20/20 'respondidos' solo en markdown, sin código",
+    "expected": {
+      "target": "Mal",
+      "acceptable": [
+        "Mal"
+      ]
+    },
+    "pii_tokens": []
+  },
+  {
+    "id": "syn_buggy",
+    "task": "numpy_i",
+    "description": "12/20 con código con errores, 8 vacíos",
+    "expected": {
+      "target": "Mal",
+      "acceptable": [
+        "Regular",
+        "Mal"
+      ]
+    },
+    "pii_tokens": []
+  },
+  {
+    "id": "syn_pii_clean",
+    "task": "numpy_i",
+    "description": "15/20 correctos; PII ficticio (email/DNI/tel/IBAN) en el texto de intro",
+    "expected": {
+      "target": "Regular",
+      "acceptable": [
+        "Bien",
+        "Regular"
+      ]
+    },
+    "pii_tokens": [
+      "alumno.falso@example.com",
+      "12345678X",
+      "+34 612 345 678",
+      "ES91 2100 0418 4502 0005 1332"
+    ]
+  },
+  {
+    "id": "syn_pii_code",
+    "task": "numpy_i",
+    "description": "20/20 correctos; PII ficticio escondido en un comentario de celda de código",
+    "expected": {
+      "target": "Bien",
+      "acceptable": [
+        "Bien",
+        "Excepcional",
+        "Regular"
+      ]
+    },
+    "pii_tokens": [
+      "alumno.falso@example.com",
+      "12345678X",
+      "+34 612 345 678",
+      "ES91 2100 0418 4502 0005 1332"
+    ]
+  }
+]

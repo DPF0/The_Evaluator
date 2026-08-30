@@ -2967,6 +2967,377 @@
           "error": null
         }
       ]
+    },
+    {
+      "timestamp": "2026-08-30T20:21:03.839622",
+      "model": "gemma_4_12b_q4k_inst1",
+      "total_notebooks": 31,
+      "total_time": 869.5,
+      "avg_time": 28.0,
+      "match_rate": 74.2,
+      "grade_distribution": {
+        "Regular": 17,
+        "Bien": 9,
+        "Mal": 5
+      },
+      "rubrics_used": {
+        "numpy_i": "rubrics/rubric_numpy_i.md",
+        "numpy_ii": "rubrics/rubric_numpy_ii.md"
+      },
+      "task_stats": {
+        "numpy_i": {
+          "total": 16,
+          "matches": 13,
+          "match_rate": 81.2,
+          "avg_time": 26.2,
+          "grade_dist": {
+            "Bien": 6,
+            "Mal": 2,
+            "Regular": 8
+          }
+        },
+        "numpy_ii": {
+          "total": 15,
+          "matches": 10,
+          "match_rate": 66.7,
+          "avg_time": 30.0,
+          "grade_dist": {
+            "Regular": 9,
+            "Mal": 3,
+            "Bien": 3
+          }
+        }
+      },
+      "model_config": {
+        "model_path": "~/Applications/models/Gemma_4_12B/gemma-4-12B-it-qat-UD-Q4_K_XL.gguf",
+        "devices": "CUDA1",
+        "port": 8084,
+        "temp": "0.6",
+        "top_p": "0.95",
+        "top_k": 64,
+        "min_p": "0.00",
+        "ctx_size": 32000,
+        "cache_type_k": "q4_0",
+        "cache_type_v": "q4_0",
+        "n_gpu_layers": 99,
+        "parallel": 3,
+        "flash_attn": true,
+        "jinja": false,
+        "fit": false,
+        "reasoning": false
+      },
+      "results": [
+        {
+          "student": "Ander Pena Villalobos_11167",
+          "filename": "Ejercicios_Numpy_II_ANDER.ipynb",
+          "task": "numpy_ii",
+          "deepseek_grade": "Regular",
+          "our_grade": "Regular",
+          "match": true,
+          "time": 29.3,
+          "error": null
+        },
+        {
+          "student": "Ander Pena Villalobos_11167",
+          "filename": "Ejercicios_Numpy_I_ANDER.ipynb",
+          "task": "numpy_i",
+          "deepseek_grade": "Bien",
+          "our_grade": "Bien",
+          "match": true,
+          "time": 21.6,
+          "error": null
+        },
+        {
+          "student": "Angelos Ampatzidis_11176",
+          "filename": "Ejercicios_Numpy_II_Angelos.ipynb",
+          "task": "numpy_ii",
+          "deepseek_grade": "Regular",
+          "our_grade": "Mal",
+          "match": false,
+          "time": 29.7,
+          "error": null
+        },
+        {
+          "student": "Angelos Ampatzidis_11176",
+          "filename": "Ejercicios_Numpy_I_Angelos.ipynb",
+          "task": "numpy_i",
+          "deepseek_grade": "Mal",
+          "our_grade": "Mal",
+          "match": true,
+          "time": 28.4,
+          "error": null
+        },
+        {
+          "student": "Fernando Benjamin S\u00e1nchez Llorens_11178",
+          "filename": "Ejercicios_Numpy_II_Fer.ipynb",
+          "task": "numpy_ii",
+          "deepseek_grade": "Regular",
+          "our_grade": "Regular",
+          "match": true,
+          "time": 36.4,
+          "error": null
+        },
+        {
+          "student": "Fernando Benjamin S\u00e1nchez Llorens_11178",
+          "filename": "Ejercicios_Numpy_I_Fer.ipynb",
+          "task": "numpy_i",
+          "deepseek_grade": "Bien",
+          "our_grade": "Bien",
+          "match": true,
+          "time": 23.4,
+          "error": null
+        },
+        {
+          "student": "Florencia Giordano Dode_11174",
+          "filename": "Ejercicios_Numpy_II_Florencia.ipynb",
+          "task": "numpy_ii",
+          "deepseek_grade": "Regular",
+          "our_grade": "Regular",
+          "match": true,
+          "time": 27.7,
+          "error": null
+        },
+        {
+          "student": "Florencia Giordano Dode_11174",
+          "filename": "Ejercicios_Numpy_I_Florencia.ipynb",
+          "task": "numpy_i",
+          "deepseek_grade": "Bien",
+          "our_grade": "Bien",
+          "match": true,
+          "time": 24.3,
+          "error": null
+        },
+        {
+          "student": "Francisco Fletcher Sanfeli\u00fa_11171",
+          "filename": "Ejercicios_Numpy_I.ipynb",
+          "task": "numpy_i",
+          "deepseek_grade": "Bien",
+          "our_grade": "Regular",
+          "match": false,
+          "time": 25.9,
+          "error": null
+        },
+        {
+          "student": "Francisco Fletcher Sanfeli\u00fa_11171",
+          "filename": "Ejercicios_Numpy_II.ipynb",
+          "task": "numpy_ii",
+          "deepseek_grade": "Bien",
+          "our_grade": "Bien",
+          "match": true,
+          "time": 27.5,
+          "error": null
+        },
+        {
+          "student": "Francisco Olivenza Mill\u00f3n_11166",
+          "filename": "Ejercicios_Numpy_II_FranciscoOlivenza.ipynb",
+          "task": "numpy_ii",
+          "deepseek_grade": "Bien",
+          "our_grade": "Regular",
+          "match": false,
+          "time": 29.7,
+          "error": null
+        },
+        {
+          "student": "Francisco Olivenza Mill\u00f3n_11166",
+          "filename": "Ejercicios_Numpy_I_FranciscoOlivenza.ipynb",
+          "task": "numpy_i",
+          "deepseek_grade": "Regular",
+          "our_grade": "Regular",
+          "match": true,
+          "time": 24.9,
+          "error": null
+        },
+        {
+          "student": "Ibai Cosgaya Prieto_11175",
+          "filename": "Ejercicios_Numpy_I.ipynb",
+          "task": "numpy_i",
+          "deepseek_grade": "Regular",
+          "our_grade": "Regular",
+          "match": true,
+          "time": 30.7,
+          "error": null
+        },
+        {
+          "student": "Ibai Cosgaya Prieto_11175",
+          "filename": "Ejercicios_Numpy_II.ipynb",
+          "task": "numpy_ii",
+          "deepseek_grade": "Bien",
+          "our_grade": "Bien",
+          "match": true,
+          "time": 24.0,
+          "error": null
+        },
+        {
+          "student": "I\u00f1igo L\u00f3pez Ayala_11179",
+          "filename": "Ejercicios_Numpy_II_Inigo_Lopez.ipynb",
+          "task": "numpy_ii",
+          "deepseek_grade": "Regular",
+          "our_grade": "Regular",
+          "match": true,
+          "time": 42.3,
+          "error": null
+        },
+        {
+          "student": "I\u00f1igo L\u00f3pez Ayala_11179",
+          "filename": "Ejercicios_Numpy_I_Inigo_Lopez.ipynb",
+          "task": "numpy_i",
+          "deepseek_grade": "Bien",
+          "our_grade": "Bien",
+          "match": true,
+          "time": 24.4,
+          "error": null
+        },
+        {
+          "student": "Jon Itsazain Martin Bilbao_11169",
+          "filename": "Ejercicios_Numpy_I.ipynb",
+          "task": "numpy_i",
+          "deepseek_grade": "Bien",
+          "our_grade": "Regular",
+          "match": false,
+          "time": 30.4,
+          "error": null
+        },
+        {
+          "student": "Jon Itsazain Martin Bilbao_11169",
+          "filename": "Ejercicios_Numpy_II.ipynb",
+          "task": "numpy_ii",
+          "deepseek_grade": "Regular",
+          "our_grade": "Regular",
+          "match": true,
+          "time": 28.9,
+          "error": null
+        },
+        {
+          "student": "Lenny Tatiana Quispe Gonzales_11177",
+          "filename": "Ejercicios_Numpy_I_tatiana.ipynb",
+          "task": "numpy_i",
+          "deepseek_grade": "Regular",
+          "our_grade": "Regular",
+          "match": true,
+          "time": 24.8,
+          "error": null
+        },
+        {
+          "student": "Miguel Pozo Aranguren_11163",
+          "filename": "Ejercicios_Numpy_I.ipynb",
+          "task": "numpy_i",
+          "deepseek_grade": "Regular",
+          "our_grade": "Mal",
+          "match": false,
+          "time": 28.9,
+          "error": null
+        },
+        {
+          "student": "Miguel Pozo Aranguren_11163",
+          "filename": "Ejercicios_Numpy_II.ipynb",
+          "task": "numpy_ii",
+          "deepseek_grade": "Regular",
+          "our_grade": "Mal",
+          "match": false,
+          "time": 27.9,
+          "error": null
+        },
+        {
+          "student": "Mikel Guill\u00e9n Baque_11180",
+          "filename": "Ejercicios_Numpy_II_MikelResuelto.ipynb",
+          "task": "numpy_ii",
+          "deepseek_grade": "Regular",
+          "our_grade": "Regular",
+          "match": true,
+          "time": 31.3,
+          "error": null
+        },
+        {
+          "student": "Mikel Guill\u00e9n Baque_11180",
+          "filename": "Ejercicios_Numpy_I_MikelResuelto.ipynb",
+          "task": "numpy_i",
+          "deepseek_grade": "Regular",
+          "our_grade": "Regular",
+          "match": true,
+          "time": 22.5,
+          "error": null
+        },
+        {
+          "student": "Nagore Juarez_11164",
+          "filename": "Ejercicios_Numpy_I.ipynb",
+          "task": "numpy_i",
+          "deepseek_grade": "Regular",
+          "our_grade": "Regular",
+          "match": true,
+          "time": 27.4,
+          "error": null
+        },
+        {
+          "student": "Nagore Juarez_11164",
+          "filename": "Ejercicios_Numpy_II.ipynb",
+          "task": "numpy_ii",
+          "deepseek_grade": "Bien",
+          "our_grade": "Bien",
+          "match": true,
+          "time": 22.9,
+          "error": null
+        },
+        {
+          "student": "Naiara Sarachaga Goffard_11173",
+          "filename": "Ejercicios_Numpy_I.ipynb",
+          "task": "numpy_i",
+          "deepseek_grade": "Bien",
+          "our_grade": "Bien",
+          "match": true,
+          "time": 26.0,
+          "error": null
+        },
+        {
+          "student": "Naiara Sarachaga Goffard_11173",
+          "filename": "Ejercicios_Numpy_II.ipynb",
+          "task": "numpy_ii",
+          "deepseek_grade": "Bien",
+          "our_grade": "Regular",
+          "match": false,
+          "time": 26.2,
+          "error": null
+        },
+        {
+          "student": "Nerea L\u00f3pez Ziluaga_11170",
+          "filename": "Ejercicios_Numpy_II_nerea.ipynb",
+          "task": "numpy_ii",
+          "deepseek_grade": "Regular",
+          "our_grade": "Regular",
+          "match": true,
+          "time": 32.3,
+          "error": null
+        },
+        {
+          "student": "Nerea L\u00f3pez Ziluaga_11170",
+          "filename": "Ejercicios_Numpy_I_nerea.ipynb",
+          "task": "numpy_i",
+          "deepseek_grade": "Bien",
+          "our_grade": "Bien",
+          "match": true,
+          "time": 22.3,
+          "error": null
+        },
+        {
+          "student": "Zigor Apraiz Garteiz_11172",
+          "filename": "Ejercicios_Numpy_I.ipynb",
+          "task": "numpy_i",
+          "deepseek_grade": "Regular",
+          "our_grade": "Regular",
+          "match": true,
+          "time": 33.6,
+          "error": null
+        },
+        {
+          "student": "Zigor Apraiz Garteiz_11172",
+          "filename": "Ejercicios_Numpy_II.ipynb",
+          "task": "numpy_ii",
+          "deepseek_grade": "Regular",
+          "our_grade": "Mal",
+          "match": false,
+          "time": 33.9,
+          "error": null
+        }
+      ]
     }
   ]
 }

@@ -13,7 +13,7 @@ Repo: https://github.com/DPF0/The_Evaluator
   branches off `dev` are optional for isolated work.
 - **Never develop directly on `main`** — no commits/pushes to `main` except release merges.
 - **Release process**: merge `dev` → `main`, tag `vMAJOR.MINOR.PATCH` (annotated),
-  push branch + tag. Releases live at 0.x (pre-1.0 MVP). Current: `v0.1.1`.
+  push branch + tag. Releases live at 0.x (pre-1.0 MVP). Current: `v0.2.0`.
 - **Render deploy**: `autoDeploy: true` is set in `render.yaml`, but it did NOT fire on the
   v0.1.1 push — after every release, check the Render dashboard and manually trigger
   "Deploy latest commit" if the build didn't start.
@@ -77,6 +77,7 @@ No ruff, black, or mypy.
 - Run: `./.venv/bin/pytest tests/test_core.py -v` (dev venv in `.venv`, already gitignored)
 - Install dev deps: `python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt -r requirements-dev.txt`
 - The benchmark runner `tests/run_test.py` is a standalone script (separate concern: LLM model benchmarks).
+- **MVP validation**: `tests/validate_mvp.py` orchestrates the full validation (fixed-set metrics, synthetic bank + PII/format, determinism, monotonicity) and writes `tests/results/validation.json`. Pure metric helpers live in `tests/metrics.py`; the synthetic notebook generator in `tests/synthetic_bank.py`. Both need no LLM except the validator, which requires Gemma on `:8084`+`:8085`.
 
 ## Known Limitations
 - `Database.close()` only closes the calling thread's connection (plus the main one). Per-thread connections from other threads leak until process exit — harmless in practice (SQLite + OS reclaim), but not a clean multi-thread shutdown.
@@ -94,6 +95,7 @@ No ruff, black, or mypy.
 | `python3 main.py rubric --generate <name> --topic <key> --description <desc>` | Generate rubric for a topic |
 | `streamlit run apps/dashboard_app.py` | Launch teacher dashboard |
 | `python3 tests/run_test.py --model <config>` | Run benchmark test (31 notebooks) |
+| `python3 tests/validate_mvp.py` | Run full MVP validation (needs Gemma on :8084+:8085) |
 | `./.venv/bin/pytest tests/test_core.py -v` | Run core regression tests (no LLM needed) |
 
 ## Testing Infrastructure
@@ -115,6 +117,13 @@ No ruff, black, or mypy.
 ### Results
 - Location: `tests/results/runs.json`
 - Each run registered with timestamp, model config, rubrics used, per-notebook results
+
+### MVP validation
+- Orchestration: `tests/validate_mvp.py` → `tests/results/validation.json`
+- Synthetic bank: 8 `numpy_i` notebooks with known target grades + planted PII, in `tests/synthetic/`
+- Metrics (no LLM): `tests/metrics.py` — exact/adjacent match, MAE, Cohen's κ, confusion, consistency, format, PII scan
+- Report: `docs/validacion.md` — written validation (fixed-set, synthetic, determinism, monotonicity)
+- Latest run: 74.2% exact / 100% adjacent on the fixed set, κ 0.549, 0 PII leaks, 100% self-consistency, 0 monotonicity violations
 
 ### Benchmark results
 - Location: `docs/llm_benchmark_results.md`
@@ -156,6 +165,12 @@ LLM params: `temperature=0.2`, `top_p=0.5`, `top_k=10`, `seed=42`, `max_tokens=8
 | `tests/test_set.csv` | Fixed test set (31 notebooks) |
 | `tests/models/*.conf` | Model server configurations |
 | `tests/results/runs.json` | Registered test results |
+| `tests/metrics.py` | Pure validation metric helpers (no LLM) |
+| `tests/synthetic_bank.py` | Deterministic synthetic notebook generator |
+| `tests/validate_mvp.py` | MVP validation orchestrator |
+| `tests/synthetic/` | Synthetic test bank (8 notebooks + manifest) |
+| `tests/results/validation.json` | Latest MVP validation results |
+| `docs/validacion.md` | Written MVP validation report (Modulo 3.2) |
 | `rubrics/rubric_numpy_i.md` | NumPy I rubric |
 | `rubrics/rubric_numpy_ii.md` | NumPy II rubric |
 | `docs/llm_benchmark_results.md` | Benchmark documentation |
@@ -169,4 +184,5 @@ LLM params: `temperature=0.2`, `top_p=0.5`, `top_k=10`, `seed=42`, `max_tokens=8
 ## Project Documentation
 
 - `docs/llm_benchmark_results.md` — Benchmark results, test procedure, model comparison.
+- `docs/validacion.md` — MVP validation report (Modulo 3.2): fixed-set, synthetic, determinism, monotonicity.
 - `docs/despliegue.md` — Deployment doc (Modulo 3.1): options chosen, Render deploy, bring-your-own-LLM design.
