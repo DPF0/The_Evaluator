@@ -170,7 +170,7 @@ LLM params: `temperature=0.2`, `top_p=0.5`, `top_k=10`, `seed=42`, `max_tokens=8
 | `tests/validate_mvp.py` | MVP validation orchestrator |
 | `tests/synthetic/` | Synthetic test bank (8 notebooks + manifest) |
 | `tests/results/validation.json` | Latest MVP validation results |
-| `docs/validacion.md` | Written MVP validation report (Modulo 3.2) |
+| `docs/validacion.md` | Model evaluation & testing report (Modulo 3.3) |
 | `rubrics/rubric_numpy_i.md` | NumPy I rubric |
 | `rubrics/rubric_numpy_ii.md` | NumPy II rubric |
 | `docs/llm_benchmark_results.md` | Benchmark documentation |
@@ -184,5 +184,5 @@ LLM params: `temperature=0.2`, `top_p=0.5`, `top_k=10`, `seed=42`, `max_tokens=8
 ## Project Documentation
 
 - `docs/llm_benchmark_results.md` — Benchmark results, test procedure, model comparison.
-- `docs/validacion.md` — MVP validation report (Modulo 3.2): fixed-set, synthetic, determinism, monotonicity.
+- `docs/validacion.md` — Model evaluation & testing report (Modulo 3.3): fixed-set, synthetic, determinism, monotonicity.
 - `docs/despliegue.md` — Deployment doc (Modulo 3.1): options chosen, Render deploy, bring-your-own-LLM design.

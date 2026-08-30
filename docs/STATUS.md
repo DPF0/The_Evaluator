@@ -56,7 +56,7 @@ apps/dashboard_app.py (Streamlit teacher dashboard, parallel batch evaluation)
 | 2026-08-24 | **Modulo 3.1 delivered and graded 10.00/10.00** (I. Montalbán) — public deployment + BYO-LLM interface |
 | v0.1.0 | First stable release: grading pipeline, dashboard, tests, Render blueprint |
 | v0.1.1 | Config tab shows active configuration + unsaved-changes warning |
-| 2026-08-30 | **Modulo 3.2 — MVP validation** (`docs/validacion.md`): fixed-set benchmark (74.2% exact, 100% adjacent, κ 0.549), synthetic bank (8 notebooks, 0 PII leaks, 8/8 format), determinism (100%), monotonicity (0 violations) |
+| 2026-08-30 | **Modulo 3.3 — model evaluation & testing** (`docs/validacion.md`): fixed-set benchmark (74.2% exact, 100% adjacent, κ 0.549), synthetic bank (8 notebooks, 0 PII leaks, 8/8 format), determinism (100%), monotonicity (0 violations) |
 | v0.2.0 | Validation suite shipped: `tests/metrics.py`, `tests/synthetic_bank.py`, `tests/validate_mvp.py`, `tests/synthetic/`, `tests/results/validation.json` |
 
 ## Testing

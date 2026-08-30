@@ -1,4 +1,4 @@
-# Validación del MVP — The Evaluator (Modulo 3.2)
+# Evaluación de modelos y testing — Validación del MVP (Módulo 3.3)
 
 > Informe de validación del entregable MVP. Resultados reproducibles, métricas por
 > caso y evaluación escrita. Fecha: 2026-08-30.
