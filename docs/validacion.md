@@ -84,17 +84,39 @@ permisiva.
 - Media: **28,0 s/notebook**; total de la corrida: **869,5 s** (~14,5 min).
 - Distribución de calificaciones emitidas: Regular 17, Bien 9, Mal 5.
 
-### Comparativa con el mejor histórico
+### Comparativa con el mejor histórico (re-evaluada)
 
 El mejor resultado histórico registrado (`docs/llm_benchmark_results.md`) para Gemma
-4 12B Q4_K en modo doble instancia era **80,6 %** de match. Esta corrida logra
-**74,2 %**. La diferencia se atribuye a la configuración de servidor de esta sesión
-(`--ctx-size 32000`, `--cache-type-k/v q4_0`) frente a la de la corrida histórica
-(`--ctx-size 128000`, caches `q8_0`/`q5_1`). Es **variación entre configuraciones
-de servidor**, no un cambio del pipeline. En cualquier caso, el match adyacente se
-mantiene en 100 % y el sesgo es exclusivamente conservador. Se deja anotado como
-punto de seguimiento afinar los parámetros del servidor para recuperar el pico
-histórico.
+4 12B Q4_K en modo doble instancia era **80,6 %** de match, obtenido con la
+configuración de servidor de alto contexto (`--ctx-size 128000`, caches
+`q8_0`/`q5_1`, `--parallel 5`, `--jinja`). La corrida de esta validación usó la
+configuración de bajo contexto (`--ctx-size 32000`, caches `q4_0`) y logró
+**74,2 %**.
+
+Para comprobar si la diferencia era atribuible a la configuración del servidor, se
+**re-ejecutó el conjunto fijo con la configuración de alto contexto** (misma build de
+llama.cpp, mismo archivo de modelo, mismos parámetros de cliente: temp 0.2, top_p 0.5,
+top_k 10, seed 42). Resultado: **67,7 %** (21/31) — **peor** que los 74,2 % del bajo
+contexto, no mejor.
+
+| Config. servidor | Match | numpy_i | numpy_ii | Errores permisivos |
+|------------------|-------|---------|----------|--------------------|
+| Bajo ctx (32000, q4_0) | 74,2 % | 13/16 | 10/15 | 0 |
+| Alto ctx (128000, q8_0/q5_1, jinja) | 67,7 % | 13/16 | 8/15 | 2 |
+
+La tarea `numpy_i` es idéntica en ambas (13/16); todo el descenso viene de
+`numpy_ii` (10→8), donde la config. de alto contexto introduce además **2 errores
+permisivos** (Regular→Bien) que la config. de bajo contexto nunca emite.
+
+**Conclusión:** el cambio de configuración del servidor **no recupera** el pico
+histórico de 80,6 %; al contrario, empeora el resultado. Dado que el eje de
+determinismo (C) demuestra que, con una config. fija, el endpoint es reproducible,
+el delta 74,2 % vs 67,7 % es atribuible a la configuración, no a varianza entre
+corridas. El 80,6 % histórico, por tanto, **no es reproducible** con la build actual
+de llama.cpp + archivo de modelo (probablemente una build/versión distinta o una
+corrida histórica no replicable). Se mantiene la configuración de **bajo contexto
+(32000, q4_0)** como la documentada: rinde mejor y consume menos memoria. Ambas
+corridas quedan registradas en `tests/results/runs.json`.
 
 ---
 
@@ -179,10 +201,10 @@ propiedad de monotonicidad se cumple.
    subcalificar). Es la dirección segura para un corrector, pero conviene afinar el
    prompt/umbral para reducir la sobre-exigencia en trabajos de alta calidad
    (15-17/20).
-2. **Parámetros del servidor**: esta corrida (`--ctx-size 32000`, caches `q4_0`) se
-   queda en 74,2 % frente al 80,6 % histórico (`--ctx-size 128000`, caches
-   `q8_0`/`q5_1`). Reevaluar con la configuración de mayor contexto para recuperar
-   el pico.
+2. **Pico histórico no reproducible**: se re-evaluó con la config. de alto contexto
+   (`--ctx-size 128000`, caches `q8_0`/`q5_1`, `--jinja`) y el resultado empeoró a
+   67,7 % (ver §2). El 80,6 % histórico no se replica con la build actual de
+   llama.cpp + archivo de modelo; se mantiene la config. de bajo contexto (74,2 %).
 3. **Banco sintético limitado**: 8 casos `numpy_i`; no hay aún banco sintético
    `numpy_ii`. Ampliar el banco para cubrir la segunda tarea.
 4. **Determinismo comprobado solo a nivel de calificación**, no del texto completo
