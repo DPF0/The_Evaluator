@@ -74,7 +74,8 @@ No ruff, black, or mypy.
 
 ### Test framework: pytest
 - **Core regression suite**: `tests/test_core.py` (no LLM/network needed). Covers task classification over all 31 test-set notebooks, targeted classifier edge cases, notebook cleaning, grade extraction, and LLM client retry logic (mocked HTTP).
-- Run: `./.venv/bin/pytest tests/test_core.py -v` (dev venv in `.venv`, already gitignored)
+- **Validation unit tests**: `tests/test_metrics.py` (no LLM/network needed). Unit tests for the pure helpers in `tests/metrics.py` (agreement/MAE/kappa/confusion/consistency, report format checks, PII detection) and the deterministic generator in `tests/synthetic_bank.py` (bank invariants, determinism, planted-PII presence).
+- Run: `./.venv/bin/pytest tests/test_core.py tests/test_metrics.py -v` (dev venv in `.venv`, already gitignored)
 - Install dev deps: `python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt -r requirements-dev.txt`
 - The benchmark runner `tests/run_test.py` is a standalone script (separate concern: LLM model benchmarks).
 - **MVP validation**: `tests/validate_mvp.py` orchestrates the full validation (fixed-set metrics, synthetic bank + PII/format, determinism, monotonicity) and writes `tests/results/validation.json`. Pure metric helpers live in `tests/metrics.py`; the synthetic notebook generator in `tests/synthetic_bank.py`. Both need no LLM except the validator, which requires Gemma on `:8084`+`:8085`.
@@ -162,6 +163,7 @@ LLM params: `temperature=0.2`, `top_p=0.5`, `top_k=10`, `seed=42`, `max_tokens=8
 | `apps/dashboard_app.py` | Streamlit teacher dashboard |
 | `tests/run_test.py` | Structured test runner (LLM benchmark) |
 | `tests/test_core.py` | Core regression suite (pytest, no LLM needed) |
+| `tests/test_metrics.py` | Unit tests for metrics.py + synthetic_bank.py (pytest, no LLM needed) |
 | `tests/test_set.csv` | Fixed test set (31 notebooks) |
 | `tests/models/*.conf` | Model server configurations |
 | `tests/results/runs.json` | Registered test results |

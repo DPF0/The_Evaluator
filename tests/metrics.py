@@ -156,7 +156,7 @@ def format_checks(report_text: str) -> dict:
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 ES_DNI_RE = re.compile(r"\b\d{8}[A-Z]\b")
 ES_PHONE_RE = re.compile(r"(?<!\d)(?:\+?34)?\s?\d{3}\s?\d{3}\s?\d{3}(?!\d)")
-IBAN_RE = re.compile(r"\b[ES]\d{2}[A-Z0-9]{20}\b")
+IBAN_RE = re.compile(r"\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b")
 
 
 def pii_regex_findings(text: str) -> dict:
