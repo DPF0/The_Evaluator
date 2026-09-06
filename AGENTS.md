@@ -6,17 +6,15 @@ AI-powered auto-grader for Jupyter notebook assignments in a Data Science bootca
 
 Repo: https://github.com/DPF0/The_Evaluator
 
+Component map & file reference: `docs/architecture.md`.
+
 ## Branching & Releases
 
 - **`main`** = stable, release-only. Reviewers and Render track `main`.
-- **`dev`** = integration branch. All new work lands here first; small feature
-  branches off `dev` are optional for isolated work.
+- **`dev`** = integration branch. All new work lands here first; small feature branches off `dev` are optional for isolated work.
 - **Never develop directly on `main`** — no commits/pushes to `main` except release merges.
-- **Release process**: merge `dev` → `main`, tag `vMAJOR.MINOR.PATCH` (annotated),
-  push branch + tag. Releases live at 0.x (pre-1.0 MVP). Current: `v0.2.0`.
-- **Render deploy**: `autoDeploy: true` is set in `render.yaml`, but it did NOT fire on the
-  v0.1.1 push — after every release, check the Render dashboard and manually trigger
-  "Deploy latest commit" if the build didn't start.
+- **Release process**: merge `dev` → `main`, tag `vMAJOR.MINOR.PATCH` (annotated), push branch + tag. Releases live at 0.x (pre-1.0 MVP). Current: `v0.2.0`.
+- **Render deploy**: `autoDeploy: true` is set in `render.yaml`, but it did NOT fire on the v0.1.1 push — after every release, check the Render dashboard and manually trigger "Deploy latest commit" if the build didn't start.
 
 ## Architecture
 
@@ -31,14 +29,7 @@ apps/dashboard_app.py (Streamlit teacher dashboard)
   └─ SQLite database (evaluations, students, rubrics, reference_metadata)
 ```
 
-- **CLI**: `main.py` — commands: `setup`, `evaluate`, `report`, `rubric`
-- **Agents**: `src/agents/` — Evaluation, Report, Rubric, Orchestrator
-- **LLM client**: `src/llm.py` — abstraction over OpenAI-compatible API, supports `RoundRobinLLMClient`
-- **Config**: `src/config.py` — centralizes all settings (LLM, database, paths)
-- **Database**: `data/evaluations.db` — SQLite with WAL mode, thread-safe
-- **Rubrics**: `rubrics/rubric_numpy_i.md`, `rubrics/rubric_numpy_ii.md` (source of truth)
-- **Student data**: `Past Bootcamps/2025-02/Ejercicios_alumnxs/` — 19 students, 30+ assignments
-- **Dashboard**: `apps/dashboard_app.py` — Streamlit on `0.0.0.0:8501`
+Full component list and file map: `docs/architecture.md`.
 
 ## Critical Gotchas
 
@@ -72,13 +63,11 @@ Matches `calificación global` section in LLM output. Deepseek uses English grad
 ### Linting / formatting
 No ruff, black, or mypy.
 
-### Test framework: pytest
-- **Core regression suite**: `tests/test_core.py` (no LLM/network needed). Covers task classification over all 31 test-set notebooks, targeted classifier edge cases, notebook cleaning, grade extraction, and LLM client retry logic (mocked HTTP).
-- **Validation unit tests**: `tests/test_metrics.py` (no LLM/network needed). Unit tests for the pure helpers in `tests/metrics.py` (agreement/MAE/kappa/confusion/consistency, report format checks, PII detection) and the deterministic generator in `tests/synthetic_bank.py` (bank invariants, determinism, planted-PII presence).
-- Run: `./.venv/bin/pytest tests/test_core.py tests/test_metrics.py -v` (dev venv in `.venv`, already gitignored)
+### Tests: pytest (no LLM/network)
+- `tests/test_core.py` (core regression) + `tests/test_metrics.py` (unit tests for `tests/metrics.py` + `tests/synthetic_bank.py`).
+- Run: `./.venv/bin/pytest tests/test_core.py tests/test_metrics.py -v`
 - Install dev deps: `python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt -r requirements-dev.txt`
-- The benchmark runner `tests/run_test.py` is a standalone script (separate concern: LLM model benchmarks).
-- **MVP validation**: `tests/validate_mvp.py` orchestrates the full validation (fixed-set metrics, synthetic bank + PII/format, determinism, monotonicity) and writes `tests/results/validation.json`. Pure metric helpers live in `tests/metrics.py`; the synthetic notebook generator in `tests/synthetic_bank.py`. Both need no LLM except the validator, which requires Gemma on `:8084`+`:8085`.
+- LLM-dependent runners are separate: `tests/run_test.py` (benchmark) and `tests/validate_mvp.py` (full MVP validation).
 
 ## Known Limitations
 - `Database.close()` only closes the calling thread's connection (plus the main one). Per-thread connections from other threads leak until process exit — harmless in practice (SQLite + OS reclaim), but not a clean multi-thread shutdown.
@@ -97,45 +86,7 @@ No ruff, black, or mypy.
 | `streamlit run apps/dashboard_app.py` | Launch teacher dashboard |
 | `python3 tests/run_test.py --model <config>` | Run benchmark test (31 notebooks) |
 | `python3 tests/validate_mvp.py` | Run full MVP validation (needs Gemma on :8084+:8085) |
-| `./.venv/bin/pytest tests/test_core.py -v` | Run core regression tests (no LLM needed) |
-
-## Testing Infrastructure
-
-### Fixed test set
-- **31 notebooks** (16 numpy_i, 15 numpy_ii) with Deepseek-R1-32B reference grades
-- Location: `tests/test_set.csv`
-- Every model is tested on the exact same notebooks
-
-### Model configs
-- Location: `tests/models/*.conf`
-- Dual-instance models (8084+8085): `ThreadPoolExecutor(2)` concurrent evaluation
-- Split models (CUDA1,CUDA2): sequential evaluation
-- Note: many `.conf` files still reference CUDA1 (now reserved — see gotchas).
-  Those configs are not runnable until rewritten for CUDA2-only (models that need
-  2 cards or >12GB simply won't fit). Historical results in `docs/llm_benchmark_results.md`
-  and `tests/results/runs.json` remain valid records of what was run.
-
-### Results
-- Location: `tests/results/runs.json`
-- Each run registered with timestamp, model config, rubrics used, per-notebook results
-
-### MVP validation
-- Orchestration: `tests/validate_mvp.py` → `tests/results/validation.json`
-- Synthetic bank: 8 `numpy_i` notebooks with known target grades + planted PII, in `tests/synthetic/`
-- Metrics (no LLM): `tests/metrics.py` — exact/adjacent match, MAE, Cohen's κ, confusion, consistency, format, PII scan
-- Report: `docs/validacion.md` — written validation (fixed-set, synthetic, determinism, monotonicity)
-- Latest run: 74.2% exact / 100% adjacent on the fixed set, κ 0.549, 0 PII leaks, 100% self-consistency, 0 monotonicity violations
-
-### Benchmark results
-- Location: `docs/llm_benchmark_results.md`
-- 7 models tested, ranked by match rate vs Deepseek reference
-
-### Best performing models
-| Model | Match Rate | Effective s/nb | Mode |
-|-------|-----------|----------------|------|
-| Gemma 4 12B Q4_K | 80.6% | 12.7s | Dual instance |
-| Qwen3-Coder 30B Q4_K | 74.2% | 14.4s | Split |
-| Gemma 4 26B Q4_K | 71.0% | 15.6s | Split |
+| `./.venv/bin/pytest tests/test_core.py tests/test_metrics.py -v` | Run pytest suites (no LLM needed) |
 
 ## Grade Scale
 
@@ -146,45 +97,12 @@ No ruff, black, or mypy.
 | Bien | 7 |
 | Excepcional | 9 |
 
-LLM params: `temperature=0.2`, `top_p=0.5`, `top_k=10`, `seed=42`, `max_tokens=8000`. System prompt forbids chain-of-thought output. All reports are in Spanish (Spain).
+System prompt forbids chain-of-thought output. All reports are in Spanish (Spain).
 
-## Relevant Files
+## Reference Docs
 
-| File | Purpose |
-|------|---------|
-| `main.py` | CLI entry point |
-| `src/agents/evaluation.py` | Evaluation agent with reference-aware grading |
-| `src/agents/orchestrator.py` | Main workflow coordinator |
-| `src/llm.py` | LLM client abstraction + RoundRobinLLMClient |
-| `src/config.py` | Centralized configuration |
-| `src/utils/notebook.py` | Notebook cleaning (nbformat, no truncation) |
-| `src/utils/reference.py` | Reference notebook analysis |
-| `src/utils/code_analysis.py` | AST-based static analysis |
-| `apps/dashboard_app.py` | Streamlit teacher dashboard |
-| `tests/run_test.py` | Structured test runner (LLM benchmark) |
-| `tests/test_core.py` | Core regression suite (pytest, no LLM needed) |
-| `tests/test_metrics.py` | Unit tests for metrics.py + synthetic_bank.py (pytest, no LLM needed) |
-| `tests/test_set.csv` | Fixed test set (31 notebooks) |
-| `tests/models/*.conf` | Model server configurations |
-| `tests/results/runs.json` | Registered test results |
-| `tests/metrics.py` | Pure validation metric helpers (no LLM) |
-| `tests/synthetic_bank.py` | Deterministic synthetic notebook generator |
-| `tests/validate_mvp.py` | MVP validation orchestrator |
-| `tests/synthetic/` | Synthetic test bank (8 notebooks + manifest) |
-| `tests/results/validation.json` | Latest MVP validation results |
-| `docs/validacion.md` | Model evaluation & testing report (Modulo 3.3) |
-| `rubrics/rubric_numpy_i.md` | NumPy I rubric |
-| `rubrics/rubric_numpy_ii.md` | NumPy II rubric |
-| `docs/llm_benchmark_results.md` | Benchmark documentation |
-| `archive/` | Deprecated files (old grader_app.py, test_batch.py) |
-| `requirements.txt` | Python dependencies (used by Dockerfile and Render) |
-| `requirements-dev.txt` | Dev dependencies (pytest) for the core test suite |
-| `Dockerfile` | Container build (streamlit dashboard) |
-| `docker-compose.yml` | Local docker compose (app only, LLM external) |
-| `render.yaml` | Render deploy blueprint (free web tier, docker runtime) |
-
-## Project Documentation
-
-- `docs/llm_benchmark_results.md` — Benchmark results, test procedure, model comparison.
-- `docs/validacion.md` — Model evaluation & testing report (Modulo 3.3): fixed-set, synthetic, determinism, monotonicity.
-- `docs/despliegue.md` — Deployment doc (Modulo 3.1): options chosen, Render deploy, bring-your-own-LLM design.
+- `docs/architecture.md` — component map & file reference.
+- `docs/llm_benchmark_results.md` — benchmark procedure, params, per-model results.
+- `docs/validacion.md` — model evaluation & testing report (Modulo 3.3): fixed-set, synthetic, determinism, monotonicity.
+- `docs/despliegue.md` — deployment (Modulo 3.1): options chosen, Render deploy, bring-your-own-LLM design.
+- `docs/analisis_arquitectura.md` — post-MVP architecture analysis (Modulo 3.1).
