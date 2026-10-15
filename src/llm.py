@@ -15,6 +15,11 @@ class LLMClient:
 
     def __init__(self, config: LLMConfig):
         self.config = config
+        self.last_usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+
+    @property
+    def model(self) -> str:
+        return self.config.model
 
     def chat(self, messages: list[dict], system_prompt: Optional[str] = None) -> str:
         """Send chat messages to LLM and return response text.
@@ -53,6 +58,12 @@ class LLMClient:
                 )
                 resp.raise_for_status()
                 data = resp.json()
+                usage = data.get("usage") or {}
+                self.last_usage = {
+                    "prompt_tokens": usage.get("prompt_tokens", 0),
+                    "completion_tokens": usage.get("completion_tokens", 0),
+                    "total_tokens": usage.get("total_tokens", 0),
+                }
                 return data["choices"][0]["message"]["content"]
             except requests.HTTPError as e:
                 status = e.response.status_code if e.response is not None else None
@@ -177,12 +188,26 @@ class RoundRobinLLMClient:
         self.clients = clients
         self._lock = threading.Lock()
         self._index = 0
+        self._last_client: Optional[LLMClient] = None
+
+    @property
+    def last_usage(self) -> dict:
+        """Token usage from the most recently used client (zeros if none)."""
+        if self._last_client is None:
+            return {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+        return self._last_client.last_usage
+
+    @property
+    def model(self) -> Optional[str]:
+        client = self._last_client or (self.clients[0] if self.clients else None)
+        return client.config.model if client else None
 
     def chat(self, messages: list[dict], system_prompt: Optional[str] = None) -> str:
         """Send chat messages to next LLM client in round-robin order."""
         with self._lock:
             client = self.clients[self._index % len(self.clients)]
             self._index += 1
+            self._last_client = client
         return client.chat(messages, system_prompt)
 
     def chat_structured(self, messages: list[dict], schema: dict,

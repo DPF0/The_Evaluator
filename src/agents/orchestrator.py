@@ -1,4 +1,6 @@
 """Orchestrator — coordinates agents and manages evaluation workflow."""
+import time
+from datetime import datetime, timezone
 from typing import Optional
 from src.db import Database
 from src.llm import LLMClient
@@ -50,16 +52,42 @@ class Orchestrator:
         rubric_content = self.rubric_agent.get_rubric(task_key)
 
         # Evaluate (with reference metadata)
-        evaluation = self.eval_agent.evaluate(
-            notebook_json, student_name, filename, rubric_content,
-            topic_key=task_key
-        )
-        evaluation.student_id = student_id
-        evaluation.assignment_id = assignment_id
-        evaluation.topic_key = task_key
+        start = time.monotonic()
+        ok = 1
+        grade_value = None
+        try:
+            evaluation = self.eval_agent.evaluate(
+                notebook_json, student_name, filename, rubric_content,
+                topic_key=task_key
+            )
+            evaluation.student_id = student_id
+            evaluation.assignment_id = assignment_id
+            evaluation.topic_key = task_key
+            grade_value = evaluation.grade.value
 
-        # Save to database
-        self.db.add_evaluation(evaluation)
+            # Save to database
+            self.db.add_evaluation(evaluation)
+        except Exception:
+            ok = 0
+            raise
+        finally:
+            latency = time.monotonic() - start
+            try:
+                usage = getattr(self.llm, "last_usage", None) or {}
+                self.db.log_usage(
+                    ts=datetime.now(timezone.utc).isoformat(),
+                    student=student_name,
+                    task=task_key,
+                    model=getattr(self.llm, "model", None),
+                    prompt_tokens=usage.get("prompt_tokens", 0),
+                    completion_tokens=usage.get("completion_tokens", 0),
+                    total_tokens=usage.get("total_tokens", 0),
+                    latency_s=latency,
+                    grade=grade_value,
+                    ok=ok,
+                )
+            except Exception:
+                pass
         return evaluation
 
     def evaluate_notebook(self, student_name: str, filename: str,

@@ -1,5 +1,6 @@
 import sqlite3
 import threading
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 from src.models import Student, Assignment, Evaluation, Rubric, Grade
@@ -114,6 +115,21 @@ class Database:
                 exercises_json TEXT NOT NULL,
                 created_at TEXT DEFAULT (datetime('now'))
             );
+
+            CREATE TABLE IF NOT EXISTS usage_log (
+                id INTEGER PRIMARY KEY,
+                ts TEXT,
+                student TEXT,
+                task TEXT,
+                model TEXT,
+                prompt_tokens INTEGER,
+                completion_tokens INTEGER,
+                total_tokens INTEGER,
+                latency_s REAL,
+                grade TEXT,
+                ok INTEGER
+            );
+            CREATE INDEX IF NOT EXISTS idx_usage_log_ts ON usage_log(ts);
         """)
         self.conn.commit()
 
@@ -309,6 +325,81 @@ class Database:
             "SELECT * FROM reference_metadata WHERE topic_key = ?", (topic_key,)
         ).fetchone()
         return dict(row) if row else None
+
+    # Usage log operations
+    def log_usage(self, ts: str, student: str, task: str, model: Optional[str],
+                  prompt_tokens: int, completion_tokens: int, total_tokens: int,
+                  latency_s: float, grade: Optional[str], ok: int) -> int:
+        """Insert one usage log row and return its ID."""
+        cursor = self.conn.execute(
+            """INSERT INTO usage_log
+               (ts, student, task, model, prompt_tokens, completion_tokens,
+                total_tokens, latency_s, grade, ok)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (ts, student, task, model, prompt_tokens, completion_tokens,
+             total_tokens, latency_s, grade, ok)
+        )
+        self.conn.commit()
+        return cursor.lastrowid
+
+    @staticmethod
+    def _usage_cutoff(days: Optional[int]) -> Optional[str]:
+        if days is None:
+            return None
+        return (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+
+    def get_usage_log(self, days: Optional[int] = None,
+                      limit: Optional[int] = None) -> list[dict]:
+        """Get usage log rows (newest first), optionally limited to the last N days."""
+        query = "SELECT * FROM usage_log"
+        params: list = []
+        cutoff = self._usage_cutoff(days)
+        if cutoff:
+            query += " WHERE ts >= ?"
+            params.append(cutoff)
+        query += " ORDER BY ts DESC"
+        if limit:
+            query += " LIMIT ?"
+            params.append(limit)
+        rows = self.conn.execute(query, params).fetchall()
+        return [dict(r) for r in rows]
+
+    def get_usage_aggregates(self, days: Optional[int] = None) -> dict:
+        """Aggregate usage: totals, by grade, and by day."""
+        params: list = []
+        where = ""
+        cutoff = self._usage_cutoff(days)
+        if cutoff:
+            where = "WHERE ts >= ?"
+            params.append(cutoff)
+        totals = self.conn.execute(
+            f"""SELECT COUNT(*) as total,
+                       COALESCE(SUM(prompt_tokens), 0) as prompt_tokens,
+                       COALESCE(SUM(completion_tokens), 0) as completion_tokens,
+                       COALESCE(SUM(total_tokens), 0) as total_tokens,
+                       COALESCE(SUM(ok), 0) as ok_count,
+                       AVG(latency_s) as avg_latency_s
+                FROM usage_log {where}""",
+            params,
+        ).fetchone()
+        by_grade = self.conn.execute(
+            f"""SELECT grade, COUNT(*) as count
+                FROM usage_log {where}
+                GROUP BY grade ORDER BY count DESC""",
+            params,
+        ).fetchall()
+        by_day = self.conn.execute(
+            f"""SELECT date(ts) as day, COUNT(*) as count,
+                       COALESCE(SUM(total_tokens), 0) as total_tokens
+                FROM usage_log {where}
+                GROUP BY day ORDER BY day""",
+            params,
+        ).fetchall()
+        return {
+            "totals": dict(totals) if totals else {},
+            "by_grade": [dict(r) for r in by_grade],
+            "by_day": [dict(r) for r in by_day],
+        }
 
     def close(self):
         """Close database connections."""
