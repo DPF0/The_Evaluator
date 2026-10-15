@@ -1,0 +1,119 @@
+/* The Evaluator — Entregable final (PDF via WeasyPrint) */
+
+@page {
+  size: A4;
+  margin: 20mm 18mm 20mm 18mm;
+  @bottom-center {
+    content: counter(page) " / " counter(pages);
+    font-size: 8pt;
+    color: #888;
+  }
+}
+
+body {
+  font-family: "DejaVu Sans", "Helvetica Neue", Arial, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.5;
+  color: #1a1a1a;
+}
+
+/* Cover: the first H1 is the program name */
+h1 {
+  font-size: 24pt;
+  font-weight: 700;
+  color: #0b3d91;
+  text-align: center;
+  margin: 40mm 0 6mm 0;
+  page-break-after: avoid;
+}
+
+h2 {
+  font-size: 15pt;
+  font-weight: 700;
+  color: #0b3d91;
+  border-bottom: 2px solid #0b3d91;
+  padding-bottom: 2px;
+  margin-top: 14mm;
+  page-break-after: avoid;
+}
+
+h3 {
+  font-size: 12pt;
+  font-weight: 700;
+  color: #222;
+  margin-top: 8mm;
+  page-break-after: avoid;
+}
+
+p { margin: 0 0 3mm 0; }
+
+a { color: #0b3d91; text-decoration: none; }
+
+hr {
+  border: none;
+  border-top: 1px solid #ccc;
+  margin: 6mm 0;
+}
+
+/* Tables */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 4mm 0;
+  font-size: 9pt;
+  page-break-inside: avoid;
+}
+
+th, td {
+  border: 1px solid #c9c9c9;
+  padding: 3px 7px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: #eef2fb;
+  font-weight: 700;
+}
+
+tr:nth-child(even) td { background: #fafafa; }
+
+/* Code */
+code {
+  font-family: "DejaVu Sans Mono", "Courier New", monospace;
+  font-size: 8.5pt;
+  background: #f3f3f3;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+pre {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 8pt;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  word-break: break-word;
+  page-break-inside: avoid;
+}
+
+pre code { background: none; padding: 0; }
+
+/* Blockquote (system prompts) */
+blockquote {
+  border-left: 3px solid #0b3d91;
+  margin: 0 0 3mm 0;
+  padding: 2px 0 2px 10px;
+  color: #444;
+  background: #f7f9fd;
+  page-break-inside: avoid;
+}
+
+blockquote p { margin: 0; }
+
+ul, ol { margin: 0 0 3mm 0; padding-left: 6mm; }
+li { margin-bottom: 1mm; }
+
+strong { color: #000; }

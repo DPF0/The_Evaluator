@@ -102,6 +102,9 @@ instance/
 # Sphinx documentation
 docs/_build/
 
+# Generated capstone PDF (uploaded to a separate platform, not committed)
+docs/entrega_final.pdf
+
 # PyBuilder
 .pybuilder/
 target/
