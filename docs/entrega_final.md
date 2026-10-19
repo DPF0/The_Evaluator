@@ -221,6 +221,25 @@ El precio de API (1 €/1M) es una suposición de referencia: los modelos reales
 mucho (Deepseek mucho más barato; GPT-4 mucho más caro), pero la *forma* de la curva
 (lineal en tokens) se mantiene.
 
+### 2.6 Capa de acceso a modelos: gateway LiteLLM
+
+Para **observabilidad** y un punto de acceso único, se está introduciendo **LiteLLM**
+como *proxy/gateway* frente a los modelos (endpoint `http://192.168.0.164:4000`).
+LiteLLM expone una **API única compatible con OpenAI** por delante de varios backends
+(llama.cpp local, APIs externas) y centraliza:
+
+- **Registro de peticiones:** log de cada llamada (modelo, tokens, estado).
+- **Coste y consumo** agregados por modelo (tokens y coste real, no estimado).
+- **Monitorización:** latencia, fallos y uso por clave de API.
+
+**Estado:** en despliegue progresivo — **aún no están conectados todos los modelos**.
+Como el endpoint de LiteLLM habla la misma interfaz OpenAI que ya usa el cliente, el
+pipeline puede apuntar a él **sin cambiar el código de la app**: se gana
+observabilidad centralizada sin tocar el pipeline. Esto materializa el item de
+*gateway de modelos* del roadmap (§6.2) y **complementa** la monitorización a nivel de
+aplicación (`usage_log`, §4.5): LiteLLM observa **toda** petición a nivel de
+infraestructura, y `usage_log` las correcciones a nivel de aplicación.
+
 ---
 
 ## 3. Módulo 2 — El agente: cómo usamos los modelos
@@ -412,6 +431,14 @@ Drift (last 10 vs overall): no grade share shifted by more than 20pp.
   sobre-califica).
 - **Tasa de fallo** y **latencia p95** como señales de degradación del endpoint.
 
+**Dos capas de observabilidad.** La monitorización del §4.5 opera a nivel de
+*aplicación* (`usage_log` + `monitor`: correcciones, nota, deriva, coste estimado).
+El gateway **LiteLLM** (§2.6) añade una capa a nivel de *infraestructura*: registra
+**toda petición al LLM** (modelo, tokens, latencia, coste real) de forma centralizada,
+independientemente de la app. Juntas dan una visión completa: la capa de aplicación
+dice *qué se corrigió y cómo*; la capa de infraestructura dice *cuánto consumió cada
+llamada al modelo*.
+
 ---
 
 ## 5. Módulo 4 — Seguridad
@@ -495,7 +522,7 @@ nuevos problemas**: es determinista, privado, bien formateado y con sesgo conser
 |-----------|--------|
 | **P0** | Autenticación Cloudflare Access (URL pública) · redacción de nombres propios (PII libre) · guardia de informe no vacío + reintento |
 | **P1** | Persistencia de `raw_response` (observabilidad) · migración SQLite → Postgres (disco efímero) · alertas de deriva/fallo |
-| **P2** | Gateway de modelos (multi-modelo) · versionado de prompts · módulo de guardarrails · banco sintético `numpy_ii` |
+| **P2** | Gateway de modelos — **LiteLLM** (en despliegue, §2.6) · versionado de prompts · módulo de guardarrails · banco sintético `numpy_ii` |
 
 ---
 
